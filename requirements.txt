@@ -1,0 +1,10 @@
+asgiref==3.3.4
+gunicorn==20.1.0
+django_notifications_hq==1.6.0
+djangorestframework_simplejwt==4.7.0
+Markdown==3.3.4
+Django==3.2.4
+djangorestframework==3.12.4
+django-filter==2.4.0
+notifications==0.3.2
+mysqlclient==2.0.3
