@@ -11,10 +11,11 @@ from rest_framework_simplejwt.views import (
 
 
 from user_info.views import UserViewSet
-
+from questionnaire.views import QuestionnaireViewSet
 
 router = DefaultRouter()
 router.register(r'user', UserViewSet)
+router.register(r'questionnaire', QuestionnaireViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -23,6 +24,8 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),  # rest_framewor
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
