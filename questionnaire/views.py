@@ -3,7 +3,8 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from questionnaire.serializers import QuestionnaireDetailSerializer, QuestionnaireListSerializer, OptionSerializer, QuestionSerializer
+from questionnaire.serializers import QuestionnaireDetailSerializer, QuestionnaireListSerializer, OptionSerializer, \
+    QuestionSerializer, AnswerSheetSerializer
 from questionnaire.models import Questionnaire, Question, Option, AnswerSheet
 
 
@@ -26,3 +27,8 @@ class QuestionViewSet(viewsets.ModelViewSet):
 class OptionViewSet(viewsets.ModelViewSet):
     queryset = Option.objects.all()
     serializer_class = OptionSerializer
+
+
+class AnswerSheetViewSet(viewsets.ModelViewSet):
+    queryset = AnswerSheet.objects.all()
+    serializer_class = AnswerSheetSerializer

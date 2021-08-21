@@ -156,14 +156,16 @@ class AnswerSheet(models.Model):
     option = models.ForeignKey(
         to='Option',
         on_delete=models.CASCADE,
-        verbose_name='选项'
+        verbose_name='选项',
+        related_name='answer_list'
     )
-    ordering = models.PositiveIntegerField(verbose_name='答卷序号')
+    ordering = models.PositiveIntegerField(verbose_name='答卷序号', blank=True)
     respondent = models.ForeignKey(
         to=User,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
-        verbose_name='答卷人'
+        verbose_name='答卷人',
+        related_name='answer_list'
     )
     content = models.TextField(blank=True, null=True, verbose_name='选项填空内容')

@@ -7,6 +7,18 @@ from rest_framework.validators import UniqueValidator
 from user_info.validator import SetCustomErrorMessagesMixin
 
 
+class UserDescSerializer(serializers.ModelSerializer):
+    url = serializers.HyperlinkedIdentityField(view_name='user-detail', lookup_field='username')
+
+    class Meta:
+        model = User
+        fields = [
+            'id',
+            'username',
+            'url',
+        ]
+
+
 class UserRegisterSerializer(SetCustomErrorMessagesMixin, serializers.ModelSerializer):
     url = serializers.HyperlinkedIdentityField(view_name='user-detail', lookup_field='username')
 
