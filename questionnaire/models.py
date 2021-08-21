@@ -90,6 +90,7 @@ class Question(models.Model):
         default='order',
         verbose_name='题目选项的显示方式',
     )
+    modify_date = models.DateTimeField(auto_now=True, verbose_name='最后修改时间')
 
     ordering = models.PositiveIntegerField(verbose_name='题目序号')
     is_must_answer = models.BooleanField(default=False, verbose_name='是否必答')
