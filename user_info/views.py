@@ -4,11 +4,13 @@ from django.shortcuts import render
 from django.contrib.auth.models import User
 
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
+from rest_framework.response import Response
 
+from questionnaire.serializers import QuestionnaireListSerializer
 from user_info.permissions import IsSelfOrReadOnly
 from user_info.serializers import UserRegisterSerializer
-
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -25,3 +27,13 @@ class UserViewSet(viewsets.ModelViewSet):
             self.permission_classes = [IsAuthenticatedOrReadOnly, IsSelfOrReadOnly]
 
         return super().get_permissions()
+
+    @action(detail=True, methods=['get'],
+            url_path='questionnaire', url_name='questionnaire')
+    def questionnaire(self, request, username=None):
+        queryset = User.objects.get(username=username).questionnaire_list.all()
+        serializer_context = {
+            'request': request,
+        }
+        serializer = QuestionnaireListSerializer(queryset, many=True, context=serializer_context)
+        return Response(serializer.data)

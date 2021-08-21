@@ -159,7 +159,7 @@ class AnswerSheet(models.Model):
         verbose_name='选项',
         related_name='answer_list'
     )
-    ordering = models.PositiveIntegerField(verbose_name='答卷序号', blank=True)
+    ordering = models.PositiveIntegerField(verbose_name='答卷序号', blank=True, null=True)
     respondent = models.ForeignKey(
         to=User,
         on_delete=models.SET_NULL,

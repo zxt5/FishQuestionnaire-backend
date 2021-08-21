@@ -24,6 +24,16 @@ class QuestionnaireBaseSerializer(serializers.HyperlinkedModelSerializer):
     answer_num = serializers.SerializerMethodField()
     author = UserDescSerializer(read_only=True)
 
+    def get_answer_num(self, questionnaire):
+        res = questionnaire.answer_list.filter(questionnaire=questionnaire).order_by('-ordering').first()
+        if res is None:
+            return 0
+        else:
+            res = res.ordering
+            if res is None:
+                return 0
+            return res
+
 
 class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
     question_list = QuestionSerializer(many=True, read_only=True)
@@ -38,7 +48,8 @@ class QuestionnaireListSerializer(QuestionnaireBaseSerializer):
         model = Questionnaire
         fields = [
             'id',
-            'title'
+            'title',
+            'answer_num'
         ]
         read_only_fields = ['id', 'title']
 
