@@ -6,6 +6,12 @@ from django.contrib.auth.models import User
 class Questionnaire(models.Model):
     title = models.CharField(max_length=255,verbose_name='问卷标题')
     content = models.TextField(verbose_name='问卷备注')
+    author = models.ForeignKey(
+        to=User,
+        on_delete=models.CASCADE,
+        verbose_name='问卷作者',
+        related_name='questionnaire_list'
+    )
     create_date = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     first_shared_date = models.DateTimeField(blank=True, null=True, verbose_name='初次发布时间')
     last_shared_date = models.DateTimeField(blank=True, null=True, verbose_name='最新发布时间')
@@ -61,11 +67,11 @@ class Questionnaire(models.Model):
 
 
 class Question(models.Model):
-    questionnaire_id = models.ForeignKey(
+    questionnaire = models.ForeignKey(
         to='Questionnaire',
         on_delete=models.CASCADE,
-        verbose_name='问卷ID'
-
+        verbose_name='问卷ID',
+        related_name='question_list'
     )
     title = models.CharField(max_length=255, verbose_name='题目标题')
     content = models.TextField(verbose_name='题目备注')
@@ -104,10 +110,11 @@ class Question(models.Model):
 
 
 class Option(models.Model):
-    question_id = models.ForeignKey(
+    question = models.ForeignKey(
         to='Question',
         on_delete=models.CASCADE,
-        verbose_name='题目ID'
+        verbose_name='题目ID',
+        related_name='option_list'
     )
     title = models.CharField(max_length=255, verbose_name='选项标题')
     content = models.TextField(verbose_name='选项备注')
@@ -137,12 +144,14 @@ class AnswerSheet(models.Model):
     questionnaire = models.ForeignKey(
         to='Questionnaire',
         on_delete=models.CASCADE,
-        verbose_name='问卷'
+        verbose_name='问卷',
+        related_name='answer_list'
     )
     question = models.ForeignKey(
         to='Question',
         on_delete=models.CASCADE,
-        verbose_name='题目'
+        verbose_name='题目',
+        related_name='answer_list'
     )
     option = models.ForeignKey(
         to='Option',

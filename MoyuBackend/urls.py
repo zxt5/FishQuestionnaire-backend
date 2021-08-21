@@ -11,11 +11,13 @@ from rest_framework_simplejwt.views import (
 
 
 from user_info.views import UserViewSet
-from questionnaire.views import QuestionnaireViewSet
+from questionnaire.views import QuestionnaireViewSet, QuestionViewSet, OptionViewSet
 
 router = DefaultRouter()
 router.register(r'user', UserViewSet)
 router.register(r'questionnaire', QuestionnaireViewSet)
+router.register(r'question', QuestionViewSet)
+router.register(r'option', OptionViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
