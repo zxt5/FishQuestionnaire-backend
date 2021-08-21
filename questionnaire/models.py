@@ -74,7 +74,7 @@ class Question(models.Model):
         related_name='question_list'
     )
     title = models.CharField(max_length=255, verbose_name='题目标题')
-    content = models.TextField(verbose_name='题目备注')
+    content = models.TextField(verbose_name='题目备注', blank=True)
     TYPE_IN_CHOICES = [
         ('single-choice', '单选题'),
         ('multiple-choice', '多选题'),
@@ -117,7 +117,7 @@ class Option(models.Model):
         related_name='option_list'
     )
     title = models.CharField(max_length=255, verbose_name='选项标题')
-    content = models.TextField(verbose_name='选项备注')
+    content = models.TextField(verbose_name='选项备注', blank=True)
     ordering = models.PositiveIntegerField(verbose_name='选项序号')
 
 

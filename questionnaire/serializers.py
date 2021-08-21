@@ -2,7 +2,7 @@ from questionnaire.models import Questionnaire, Question, Option, AnswerSheet
 from rest_framework import serializers
 from user_info.serializers import UserDescSerializer
 
-class OptionSerializer(serializers.HyperlinkedModelSerializer):
+class OptionSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -10,7 +10,7 @@ class OptionSerializer(serializers.HyperlinkedModelSerializer):
         fields = '__all__'
 
 
-class QuestionSerializer(serializers.HyperlinkedModelSerializer):
+class QuestionSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     option_list = OptionSerializer(many=True, read_only=True)
 
@@ -19,10 +19,11 @@ class QuestionSerializer(serializers.HyperlinkedModelSerializer):
         fields = '__all__'
 
 
-class QuestionnaireBaseSerializer(serializers.HyperlinkedModelSerializer):
+class QuestionnaireBaseSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     answer_num = serializers.SerializerMethodField()
     author = UserDescSerializer(read_only=True)
+    url = serializers.HyperlinkedIdentityField(view_name='questionnaire-detail')
 
     def get_answer_num(self, questionnaire):
         res = questionnaire.answer_list.filter(questionnaire=questionnaire).order_by('-ordering').first()
@@ -49,7 +50,8 @@ class QuestionnaireListSerializer(QuestionnaireBaseSerializer):
         fields = [
             'id',
             'title',
-            'answer_num'
+            'answer_num',
+            'url'
         ]
         read_only_fields = ['id', 'title']
 

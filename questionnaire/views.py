@@ -1,4 +1,6 @@
-from django.db.models import Max
+from datetime import datetime
+
+from django.utils import timezone
 
 from rest_framework import filters, status
 from rest_framework import viewsets
@@ -30,13 +32,32 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         else:
             return QuestionnaireDetailSerializer
 
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+    # 开启/关闭 假设给的数据没问题
+    @action(detail=True, methods=['put'],
+            url_path='status', url_name='status')
+    def set_status(self, request, pk=None):
+        instance = Questionnaire.objects.get(pk=pk)
+        instance.status = request.data.get('status')
+
+        if instance.status == 'shared':
+            if instance.first_shared_date is None:
+                instance.first_shared_date = timezone.now()
+            instance.last_shared_date = timezone.now()
+
+        instance.save()
+        serializer = QuestionnaireDetailSerializer(instance, context={'request': request})
+        return Response(serializer.data)
+
 
 class QuestionViewSet(viewsets.ModelViewSet):
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
 
 
-class OptionViewSet(viewsets.ModelViewSet):
+class OptionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = Option.objects.all()
     serializer_class = OptionSerializer
 
