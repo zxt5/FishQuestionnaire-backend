@@ -6,9 +6,9 @@ from django.contrib.auth.models import User
 class Questionnaire(models.Model):
     title = models.CharField(max_length=255,verbose_name='问卷标题')
     content = models.TextField(verbose_name='问卷备注')
-    create_date = models.DateTimeField(auto_now_add=True,verbose_name='创建时间')
-    first_shared_date = models.DateTimeField(verbose_name='初次发布时间')
-    last_shared_date = models.DateTimeField(verbose_name='最新发布时间')
+    create_date = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
+    first_shared_date = models.DateTimeField(blank=True, null=True, verbose_name='初次发布时间')
+    last_shared_date = models.DateTimeField(blank=True, null=True, verbose_name='最新发布时间')
     modify_date = models.DateTimeField(auto_now=True, verbose_name='最后修改时间')
     STATUS_IN_CHOICES = [
         ('deleted', '处于回收站中'),
@@ -36,7 +36,7 @@ class Questionnaire(models.Model):
     )
 
     is_locked = models.BooleanField(default=False, verbose_name="访问是否需要密码")
-    password = models.CharField(max_length=255, default='', verbose_name="访问密码")
+    password = models.CharField(max_length=255,blank=True, default='', verbose_name="访问密码")
 
     # 只允许回答一次的前提是，is_required_login为True
     is_required_login = models.BooleanField(default=False, verbose_name="填写是否需要登录")
@@ -102,8 +102,6 @@ class Question(models.Model):
     answer = models.TextField(blank=True, verbose_name='参考答案')
 
 
-
-
 class Option(models.Model):
     question_id = models.ForeignKey(
         to='Question',
@@ -125,8 +123,11 @@ class Option(models.Model):
     # 填空题
     score = models.DecimalField(null=True, blank=True, max_digits=4, decimal_places=1,
                                 verbose_name="该选项/填空分数")
-    answer = models.CharField(max_length=255, verbose_name='参考答案')
+    answer = models.CharField(max_length=255,
+                              blank=True,
+                              verbose_name='参考答案')
     validator_regex = models.CharField(max_length=255,
+                                       blank=True,
                                        verbose_name='以正则表达形式式存储的字段检查正则式')
     is_must_answer = models.BooleanField(default=False, verbose_name='是否必答')
 
