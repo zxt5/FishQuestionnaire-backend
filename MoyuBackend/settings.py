@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'rest_framework',
 
     # installed app!
-    'questionaire',
+    'questionnaire',
     'user_info'
 ]
 
