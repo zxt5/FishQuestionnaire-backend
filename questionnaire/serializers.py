@@ -64,17 +64,17 @@ class QuestionnaireBaseSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     author = UserDescSerializer(read_only=True)
     url = serializers.HyperlinkedIdentityField(view_name='questionnaire-detail')
-    # answer_num = serializers.SerializerMethodField()
-    #
-    # def get_answer_num(self, questionnaire):
-    #     res = questionnaire.answer_list.filter(questionnaire=questionnaire).order_by('-ordering').first()
-    #     if res is None:
-    #         return 0
-    #     else:
-    #         res = res.ordering
-    #         if res is None:
-    #             return 0
-    #         return res
+    answer_num = serializers.SerializerMethodField()
+
+    def get_answer_num(self, questionnaire):
+        res = questionnaire.answer_list.filter(questionnaire=questionnaire).order_by('-ordering').first()
+        if res is None:
+            return 0
+        else:
+            res = res.ordering
+            if res is None:
+                return 0
+            return res
 
 
 class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
