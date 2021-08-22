@@ -31,6 +31,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'],
             url_path='questionnaire', url_name='questionnaire')
     def questionnaire(self, request, username=None):
+        # status = request.data.get('status')
         queryset = User.objects.get(username=username).questionnaire_list.all()
         serializer_context = {
             'request': request,
