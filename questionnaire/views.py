@@ -26,6 +26,9 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
     queryset = Questionnaire.objects.all()
     serializer_class = QuestionnaireDetailSerializer
 
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title']
+
     def get_serializer_class(self):
         if self.action == 'list':
             return QuestionnaireListSerializer
