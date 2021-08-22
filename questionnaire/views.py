@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.db.models import F
 from django.utils import timezone
 
 from rest_framework import filters, status
@@ -97,18 +98,47 @@ class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
     '''
-        一个待解决的问题：这个新问题的ordering怎么办？
-        1. 加到最后。获取当前问卷所有问题的最大的序号。
-        2. 加到下一栏，问题之后的依次加1
-        另一个问题：
+        删除之前更新list，使其ordering-1
+        如果更新时，其实例的ordering改变了，那么就找出被交换的另一方，进行属性更新
+        创建之前，所有在这之后的实例的ordering+1
+        如果复制问题，新的问题出现在原问题的下面，其余问题的ordering+1
     '''
-    @action(detail=False, methods=['post'],
+    def perform_destroy(self, instance):
+        question_list = Question.objects.filter(questionnaire_id=instance.questionnaire_id). \
+            filter(ordering__gte=instance.ordering)
+        question_list.update(ordering=F('ordering') - 1)
+        instance.delete()
+
+    def perform_update(self, serializer):
+        old_ordering = serializer.instance.ordering
+        instance = serializer.save()
+        new_ordering = instance.ordering
+        if old_ordering != new_ordering:
+            exchanged_question = Question.objects.filter(questionnaire_id=instance.questionnaire_id). \
+                exclude(id=instance.id).get(ordering=new_ordering)
+            exchanged_question.ordering = old_ordering
+            exchanged_question.save()
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        questionnaire_id = instance.questionnaire_id
+        ordering = instance.ordering
+        question_list = Question.objects.filter(questionnaire_id=questionnaire_id). \
+            filter(ordering__gte=ordering).exclude(id=instance.id)
+        question_list.update(ordering=F('ordering') + 1)
+
+    @action(detail=True, methods=['post'],
             url_path='copy', url_name='copy')
-    def copy(self, request):
-        old_q_pk = request.data.get('id')
+    def copy(self, request, pk=None):
+        old_q_pk = pk
 
         question = Question.objects.get(id=old_q_pk)
         question.pk = None
+
+        question_list = Question.objects.filter(questionnaire_id=question.questionnaire_id). \
+            filter(ordering__gt=question.ordering)
+        question_list.update(ordering=F('ordering') + 1)
+        question.ordering = question.ordering+1
         question.modify_date = timezone.now()
         question.save()
 
@@ -128,6 +158,29 @@ class OptionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = Option.objects.all()
     serializer_class = OptionSerializer
 
+    def perform_destroy(self, instance):
+        option_list = Option.objects.filter(question_id=instance.question_id). \
+            filter(ordering__gte=instance.ordering)
+        option_list.update(ordering=F('ordering') - 1)
+        instance.delete()
+
+    def perform_update(self, serializer):
+        old_ordering = serializer.instance.ordering
+        instance = serializer.save()
+        new_ordering = instance.ordering
+        if old_ordering != new_ordering:
+            exchanged_option = Option.objects.filter(question_id=instance.question_id). \
+                exclude(id=instance.id).get(ordering=new_ordering)
+            exchanged_option.ordering = old_ordering
+            exchanged_option.save()
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        question_id = instance.question_id
+        ordering = instance.ordering
+        option_list = Question.objects.filter(question_id=question_id). \
+            filter(ordering__gte=ordering).exclude(id=instance.id)
+        option_list.update(ordering=F('ordering') + 1)
 
 class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = AnswerSheet.objects.all()
