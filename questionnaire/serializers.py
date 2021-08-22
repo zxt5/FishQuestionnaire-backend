@@ -15,7 +15,7 @@ class OptionSerializer(serializers.ModelSerializer):
 
 
 class OptionNestSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=False)
+    id = serializers.IntegerField(read_only=False, required=False)
 
     class Meta:
         model = Option
@@ -46,17 +46,26 @@ class QuestionSerializer(serializers.ModelSerializer):
         option_list_data = validated_data.get('option_list')
         if option_list_data is not None:
             validated_data.pop('option_list')
+            reserve_options_list = []
             for option_data in option_list_data:
                 op_id = option_data.get('id')
+                # 如果选项ID存在，说明该选项是被更新的，保留。
                 if op_id is not None:
                     option_instance = Option.objects.get(id=op_id)
-                    option_data.pop('id')
-                    print(option_data)
+                    reserve_options_list.append(option_data.pop('id'))
                     super().update(option_instance, option_data)
+                # 如果选项ID不存在，说明该选项是要创建的，保留
                 else:
-                    Option.objects.create(option_data)
+                    instance = Option.objects.create(option_data)
+                    reserve_options_list.append(instance.id)
+            # 删除那些不在此次PUT json中的数据
+            all_option = Option.objects.filter(question_id=instance.id)
+            for option in all_option:
+                if option.id not in reserve_options_list:
+                    option.delete()
 
         super().update(instance, validated_data)
+
         return instance
 
 

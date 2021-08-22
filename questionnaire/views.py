@@ -38,6 +38,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+
     # 开启/关闭 假设给的数据没问题
     @action(detail=True, methods=['put'],
             url_path='status', url_name='status')
@@ -116,7 +117,7 @@ class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
     '''
-        删除之前更新list，使其ordering-1
+        删除之前更新list，使其ordering-1。 删除问题的同时，选项也该被删除。
         如果更新时，其实例的ordering改变了，那么就找出被交换的另一方，进行属性更新
         创建之前，所有在这之后的实例的ordering+1
         如果复制问题，新的问题出现在原问题的下面，其余问题的ordering+1
@@ -125,6 +126,7 @@ class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
         question_list = Question.objects.filter(questionnaire_id=instance.questionnaire_id). \
             filter(ordering__gte=instance.ordering)
         question_list.update(ordering=F('ordering') - 1)
+
         instance.delete()
 
     def perform_update(self, serializer):
