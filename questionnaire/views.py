@@ -94,6 +94,21 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+    '''
+        '-created_time', 'created_time', '-last_shared_date', 'last_shared_date',
+        回收量？!
+        '-answer_num'
+    '''
+    @action(detail=False, methods=['get'],
+            url_path='sort', url_name='sort')
+    def sort(self, request):
+        keyword = request.data.get('keyword')
+        questionnaire_list = Questionnaire.objects.exclude(status='deleted')\
+            .order_by(keyword)
+        serializers = QuestionnaireListSerializer(questionnaire_list,context={'request': request}, many=True)
+        return Response(serializers, status.HTTP_200_OK)
+
+
 class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
@@ -127,10 +142,10 @@ class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
             filter(ordering__gte=ordering).exclude(id=instance.id)
         question_list.update(ordering=F('ordering') + 1)
 
-    @action(detail=True, methods=['post'],
+    @action(detail=False, methods=['post'],
             url_path='copy', url_name='copy')
-    def copy(self, request, pk=None):
-        old_q_pk = pk
+    def copy(self, request):
+        old_q_pk = request.data.get('id')
 
         question = Question.objects.get(id=old_q_pk)
         question.pk = None
@@ -182,13 +197,19 @@ class OptionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
             filter(ordering__gte=ordering).exclude(id=instance.id)
         option_list.update(ordering=F('ordering') + 1)
 
+
 class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = AnswerSheet.objects.all()
     serializer_class = AnswerSheetSerializer
 
     def perform_create(self, serializer):
-        max_ordering = 0
-        entity = AnswerSheet.objects.order_by('-ordering').first()
+        max_ordering = 1
+        questionnaire_id = serializer.data[0].get('questionnaire')
+        entity = AnswerSheet.objects.filter(questionnaire_id=questionnaire_id).\
+            order_by('-ordering').first()
         if entity is not None:
             max_ordering = entity.ordering + 1
+        questionnaire = Questionnaire.objects.get(id=questionnaire_id)
+        questionnaire.answer_num = max_ordering
+        questionnaire.save()
         serializer.save(ordering=max_ordering)
