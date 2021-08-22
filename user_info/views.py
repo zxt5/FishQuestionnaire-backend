@@ -2,13 +2,15 @@ from django.shortcuts import render
 
 # Create your views here.
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
-from questionnaire.serializers import QuestionnaireListSerializer
+from questionnaire.models import Questionnaire
+from questionnaire.serializers import QuestionnaireListSerializer, QuestionnaireDetailSerializer
 from user_info.permissions import IsSelfOrReadOnly
 from user_info.serializers import UserRegisterSerializer
 
@@ -47,3 +49,16 @@ class UserViewSet(viewsets.ModelViewSet):
         }
         serializer = QuestionnaireListSerializer(queryset, many=True, context=serializer_context)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['put'],
+            url_path='filter', url_name='filter')
+    def filter(self, request, pk=None):
+            tempquestionnaire = Questionnaire.objects.get(pk=pk)
+            tempquestionnaire.status = request.data.get('status')
+
+            if tempquestionnaire.status == 'shared' and tempquestionnaire.first_shared_date is None:
+                tempquestionnaire.first_shared_date = timezone.now()
+
+            tempquestionnaire.save()
+            serializer = QuestionnaireDetailSerializer(tempquestionnaire, context={'request': request})
+            return Response(serializer.data)
