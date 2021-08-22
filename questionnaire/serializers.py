@@ -56,8 +56,6 @@ class QuestionSerializer(serializers.ModelSerializer):
                     super().update(option_instance, option_data)
                 # 如果选项ID不存在，说明该选项是要创建的，保留
                 else:
-                    print(option_data)
-                    print(instance)
                     opt = Option.objects.create(question_id=instance.id, **option_data)
                     reserve_options_list.append(opt.id)
             # 删除那些不在此次PUT json中的数据
@@ -65,10 +63,14 @@ class QuestionSerializer(serializers.ModelSerializer):
             for option in all_option:
                 if option.id not in reserve_options_list:
                     option.delete()
-
+        # 更新非嵌套的内容
         super().update(instance, validated_data)
 
         return instance
+
+
+class QuestionNestSerializer(QuestionSerializer):
+    id = serializers.IntegerField(read_only=False, required=False)
 
 
 class QuestionnaireBaseSerializer(serializers.ModelSerializer):
@@ -89,7 +91,39 @@ class QuestionnaireBaseSerializer(serializers.ModelSerializer):
 
 
 class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
-    question_list = QuestionSerializer(many=True, read_only=True)
+    question_list = QuestionNestSerializer(many=True, required=False)
+    '''
+        解析问卷。一次性传入，然后看题目的id是否存在。类似于题目选项的写法，难点是封装成一个递归函数
+    '''
+
+    def update(self, instance, validated_data):
+        question_list_data = validated_data.get('question_list')
+        question_class = QuestionSerializer()
+        if question_list_data is not None:
+            validated_data.pop('question_list')
+            reverse_question_list = []
+            for question_data in question_list_data:
+                question_id = question_data.get('id')
+                # 如果题目ID存在，说明该题目是要被更新的
+                if question_id is not None:
+                    question = Question.objects.get(id=question_id)
+                    reverse_question_list.append(question_data.pop('id'))
+                    # 因为question下面还有一层option需要处理，所以不能用原生的super().update方法
+                    question_class.update(question, question_data)
+                # 如果题目ID不存在，说明要新建一个题目
+                else:
+                    print(question_data)
+                    question = question_class.create(question_data)
+                    reverse_question_list.append(question.id)
+            # 删除那些不在此次PUT的但保留在数据库中的question实体
+            all_question = Question.objects.filter(questionnaire_id=instance.id)
+            for question in all_question:
+                if question.id not in reverse_question_list:
+                    question.delete()
+        # 更新非嵌套的内容
+        super().update(instance, validated_data)
+        return instance
+
 
     class Meta:
         model = Questionnaire
