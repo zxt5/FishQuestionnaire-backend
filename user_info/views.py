@@ -31,8 +31,17 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'],
             url_path='questionnaire', url_name='questionnaire')
     def questionnaire(self, request, username=None):
-        # status = request.data.get('status')
-        queryset = User.objects.get(username=username).questionnaire_list.all()
+        queryset = User.objects.get(username=username).questionnaire_list.exclude(status='deleted')
+        serializer_context = {
+            'request': request,
+        }
+        serializer = QuestionnaireListSerializer(queryset, many=True, context=serializer_context)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'],
+            url_path='recycle', url_name='recycle')
+    def recycle(self, request, username=None):
+        queryset = User.objects.get(username=username).questionnaire_list.filter(status='deleted')
         serializer_context = {
             'request': request,
         }
