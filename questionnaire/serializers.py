@@ -56,8 +56,10 @@ class QuestionSerializer(serializers.ModelSerializer):
                     super().update(option_instance, option_data)
                 # 如果选项ID不存在，说明该选项是要创建的，保留
                 else:
-                    instance = Option.objects.create(option_data)
-                    reserve_options_list.append(instance.id)
+                    print(option_data)
+                    print(instance)
+                    opt = Option.objects.create(question_id=instance.id, **option_data)
+                    reserve_options_list.append(opt.id)
             # 删除那些不在此次PUT json中的数据
             all_option = Option.objects.filter(question_id=instance.id)
             for option in all_option:
