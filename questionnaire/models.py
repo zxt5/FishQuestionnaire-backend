@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 # Create your models here.
+from django.utils import timezone
 
 
 class Questionnaire(models.Model):
@@ -170,4 +171,6 @@ class AnswerSheet(models.Model):
         verbose_name='答卷人',
         related_name='answer_list'
     )
+    modified_time = models.DateTimeField(default=timezone.now, verbose_name='回答时间')
+    ip = models.CharField(max_length=255, blank=True, verbose_name='用户IP地址')
     content = models.TextField(blank=True, null=True, verbose_name='选项填空内容')

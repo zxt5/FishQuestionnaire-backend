@@ -38,7 +38,6 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-
     # 开启/关闭 假设给的数据没问题
     @action(detail=True, methods=['put'],
             url_path='status', url_name='status')
@@ -97,20 +96,36 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         serializer = QuestionnaireDetailSerializer(questionnaire_obj, context={'request': request})
         return Response(serializer.data)
 
-
     '''
         '-created_time', 'created_time', '-last_shared_date', 'last_shared_date',
         回收量？!
         '-answer_num'
     '''
+
     @action(detail=False, methods=['get'],
             url_path='sort', url_name='sort')
     def sort(self, request):
         keyword = request.data.get('keyword')
-        questionnaire_list = Questionnaire.objects.exclude(status='deleted')\
+        questionnaire_list = Questionnaire.objects.exclude(status='deleted') \
             .order_by(keyword)
-        serializers = QuestionnaireListSerializer(questionnaire_list,context={'request': request}, many=True)
-        return Response(serializers, status.HTTP_200_OK)
+        serializers = QuestionnaireListSerializer(questionnaire_list, context={'request': request}, many=True)
+        return Response(serializers.data, status.HTTP_200_OK)
+
+    # 删除指定id问卷的所有答卷
+    @action(detail=False, methods=['delete'],
+            url_path='delete-all-answer', url_name='delete-all-answer')
+    def delete_all_answer(self, request):
+
+        pk = request.data.get('id')
+        questionnaire = Questionnaire.objects.get(id=pk)
+
+        # 删除该问卷名下的所有答卷
+        answer_list = AnswerSheet.objects.filter(questionnaire=questionnaire)
+        answer_list.delete()
+
+        serializers = QuestionnaireDetailSerializer(questionnaire, context={'request': request})
+        return Response(serializers.data, status.HTTP_200_OK)
+
 
 
 class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
@@ -122,6 +137,7 @@ class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
         创建之前，所有在这之后的实例的ordering+1
         如果复制问题，新的问题出现在原问题的下面，其余问题的ordering+1
     '''
+
     def perform_destroy(self, instance):
         question_list = Question.objects.filter(questionnaire_id=instance.questionnaire_id). \
             filter(ordering__gte=instance.ordering)
@@ -158,7 +174,7 @@ class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
         question_list = Question.objects.filter(questionnaire_id=question.questionnaire_id). \
             filter(ordering__gt=question.ordering)
         question_list.update(ordering=F('ordering') + 1)
-        question.ordering = question.ordering+1
+        question.ordering = question.ordering + 1
         question.modify_date = timezone.now()
         question.save()
 
@@ -210,7 +226,7 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     def perform_create(self, serializer):
         max_ordering = 1
         questionnaire_id = serializer.data[0].get('questionnaire')
-        entity = AnswerSheet.objects.filter(questionnaire_id=questionnaire_id).\
+        entity = AnswerSheet.objects.filter(questionnaire_id=questionnaire_id). \
             order_by('-ordering').first()
         if entity is not None:
             max_ordering = entity.ordering + 1
