@@ -39,6 +39,7 @@ class QuestionSerializer(serializers.ModelSerializer):
 
         if option_list_data is not None:
             for option in option_list_data:
+                option['id'] = None
                 Option.objects.create(question=question, **option)
         return question
 
