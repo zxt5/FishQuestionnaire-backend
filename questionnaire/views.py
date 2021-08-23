@@ -139,7 +139,20 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
             serializers = QuestionnaireListSerializer(questionnaire_list, context={'request': request}, many=True)
             return Response(serializers.data, status.HTTP_200_OK)
         else:
-            return Response({"error": "仅登录用户可进行排序"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"message": "仅登录用户可进行排序"}, status=status.HTTP_401_UNAUTHORIZED)
+
+    @action(detail=False, methods=['get'],
+            url_path='search', url_name='search')
+    def search(self, request):
+        user = request.user
+        if user.is_authenticated:
+            keyword = request.data.get('keyword')
+            questionnaire_list = Questionnaire.objects.exclude(status='deleted') \
+                .filter(author=user).filter(title__icontains=keyword)
+            serializers = QuestionnaireListSerializer(questionnaire_list, context={'request': request}, many=True)
+            return Response(serializers.data, status.HTTP_200_OK)
+        else:
+            return Response({"message": "仅登录用户可进行搜索"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
     # 删除指定id问卷的所有答卷
