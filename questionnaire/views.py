@@ -161,6 +161,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
     def delete_all_answer(self, request):
 
         pk = request.data.get('id')
+        print(pk)
         questionnaire = Questionnaire.objects.get(id=pk)
 
         # 删除该问卷名下的所有答卷
