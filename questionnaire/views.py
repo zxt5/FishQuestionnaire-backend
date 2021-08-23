@@ -156,7 +156,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
 
 
     # 删除指定id问卷的所有答卷
-    @action(detail=False, methods=['delete'],
+    @action(detail=False, methods=['put'],
             url_path='delete-all-answer', url_name='delete-all-answer')
     def delete_all_answer(self, request):
 
