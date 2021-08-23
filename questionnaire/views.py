@@ -48,6 +48,14 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
     # filter_backends = [filters.SearchFilter]
     # search_fields = ['title']
 
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated:
+            return Questionnaire.objects.filter(author=user)
+        else:
+            return Questionnaire.objects.none()
+
+
     def get_serializer_class(self):
         if self.action == 'list':
             return QuestionnaireListSerializer
@@ -116,17 +124,23 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     '''
-        '-create_date', 'create_date', '-last_shared_date', 'last_shared_date', 排序字段
-        '-answer_num'
+        '-create_date', 'create_date', 创建时间
+         '-last_shared_date', 'last_shared_date', 最后分享时间
+        '-answer_num' 回收的问卷数
     '''
     @action(detail=False, methods=['get'],
             url_path='sort', url_name='sort')
     def sort(self, request):
-        keyword = request.data.get('keyword')
-        questionnaire_list = Questionnaire.objects.exclude(status='deleted') \
-            .order_by(keyword)
-        serializers = QuestionnaireListSerializer(questionnaire_list, context={'request': request}, many=True)
-        return Response(serializers.data, status.HTTP_200_OK)
+        user = request.user
+        if user.is_authenticated:
+            keyword = request.data.get('keyword')
+            questionnaire_list = Questionnaire.objects.exclude(status='deleted') \
+                .filter(author=user).order_by(keyword)
+            serializers = QuestionnaireListSerializer(questionnaire_list, context={'request': request}, many=True)
+            return Response(serializers.data, status.HTTP_200_OK)
+        else:
+            return Response({"error": "仅登录用户可进行排序"}, status=status.HTTP_401_UNAUTHORIZED)
+
 
     # 删除指定id问卷的所有答卷
     @action(detail=False, methods=['delete'],
