@@ -165,14 +165,23 @@ class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
         instance.delete()
 
     def perform_update(self, serializer):
+        # 此时instance还是老的，还未更新
         old_ordering = serializer.instance.ordering
+        # 此时的instance中的数据已经被更新了
         instance = serializer.save()
         new_ordering = instance.ordering
         if old_ordering != new_ordering:
-            exchanged_question = Question.objects.filter(questionnaire_id=instance.questionnaire_id). \
-                exclude(id=instance.id).get(ordering=new_ordering)
-            exchanged_question.ordering = old_ordering
-            exchanged_question.save()
+            if old_ordering < new_ordering:
+                question_list = Question.objects.filter(questionnaire_id=instance.questionnaire_id). \
+                    filter(ordering__lte=new_ordering).filter(ordering__gt=old_ordering).\
+                    exclude(id=instance.id)
+                question_list.update(ordering=F('ordering') - 1)
+
+            else:
+                question_list = Question.objects.filter(questionnaire_id=instance.questionnaire_id). \
+                    filter(ordering__lt=old_ordering).filter(ordering__gte=new_ordering).\
+                    exclude(id=instance.id)
+                question_list.update(ordering=F('ordering') + 1)
 
     def perform_create(self, serializer):
         instance = serializer.save()

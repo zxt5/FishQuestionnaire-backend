@@ -184,6 +184,11 @@ class OptionReportSerializer(serializers.ModelSerializer):
 
 class QuestionReportSerializer(QuestionBaseSerializer):
     option_list = serializers.SerializerMethodField()
+    number = serializers.SerializerMethodField()
+
+    def get_number(self, instance):
+        return AnswerSheet.objects.filter(question=instance).\
+            values('ordering').distinct().count()
 
     def get_option_list(self, instance):
         option_list = instance.option_list.all().order_by('ordering')
