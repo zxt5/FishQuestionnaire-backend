@@ -1,3 +1,7 @@
+import django_filters
+import xlwt
+from django_filters import BaseInFilter, CharFilter
+from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_pandas import PandasView, PandasExcelRenderer, PandasViewSet, PandasCSVRenderer
 
 from django.db.models import F
@@ -22,12 +26,27 @@ class CreateListModelMixin(object):
         return super(CreateListModelMixin, self).get_serializer(*args, **kwargs)
 
 
+class CharInFilter(BaseInFilter, CharFilter):
+    pass
+
+
+class QuestionnaireFilter(FilterSet):
+    status = CharInFilter(field_name='status', lookup_expr='in')
+    title = django_filters.CharFilter(field_name='title', lookup_expr='icontains')
+
+    class Meta:
+        model = Questionnaire
+        fields = ['title', 'status']
+
+
 class QuestionnaireViewSet(viewsets.ModelViewSet):
     queryset = Questionnaire.objects.all()
     serializer_class = QuestionnaireDetailSerializer
 
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['title']
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = QuestionnaireFilter
+    # filter_backends = [filters.SearchFilter]
+    # search_fields = ['title']
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -143,6 +162,24 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
             return Response(serializer.data,
                             status.HTTP_200_OK)
 
+    # 导出excel
+    @action(detail=True, methods=['get'],
+            url_path='export-xls',url_name='export-xls')
+    def export_xls(self, request, pk=None):
+        response = Response(content_type='application/ms-excel')
+        response['Content-Disposition'] = 'attachment; filename=Expenses' + \
+            str(timezone.now()) + '.xls'
+        workbook = xlwt.Workbook(encoding='utf-8')
+        worksheet = workbook.add_sheet('origin_data')
+        row_num = 0
+        font_style = xlwt.XFStyle()
+        font_style.font.bold = True
+
+        columns = ['回收问卷序号', 'IP', '题目描述', '题目序号', '选项描述', '选项序号']
+        for col_num in range(len(columns)):
+            worksheet.write(row_num, col_num, columns[col_num], font_style)
+
+        rows = AnswerSheet.objects.filter(questionnaire_id=pk)
 
 
     # # 导出Excel
