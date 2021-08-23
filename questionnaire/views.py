@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from questionnaire.serializers import QuestionnaireDetailSerializer, QuestionnaireListSerializer, OptionSerializer, \
-    QuestionSerializer, AnswerSheetSerializer
+    QuestionSerializer, AnswerSheetSerializer, QuestionReportSerializer, QuestionnaireReportSerializer
 from questionnaire.models import Questionnaire, Question, Option, AnswerSheet
 
 
@@ -119,13 +119,32 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         pk = request.data.get('id')
         questionnaire = Questionnaire.objects.get(id=pk)
 
+
         # 删除该问卷名下的所有答卷
         answer_list = AnswerSheet.objects.filter(questionnaire=questionnaire)
         answer_list.delete()
+        questionnaire.answer_num = 0
 
         serializers = QuestionnaireDetailSerializer(questionnaire, context={'request': request})
         return Response(serializers.data, status.HTTP_200_OK)
 
+    # 获取指定id问卷的分析内容
+    @action(detail=True, methods=['get'],
+            url_path='report', url_name='report',
+            serializer_class=QuestionnaireReportSerializer)
+    def report(self, request, pk=None):
+        questionnaire = Questionnaire.objects.get(id=pk)
+        count = AnswerSheet.objects.filter(questionnaire=questionnaire).count()
+        if count == 0:
+            no_answer_message = '此问卷暂时还没有答卷，请先回收答卷'
+            return Response({'message': no_answer_message },
+                            status.HTTP_400_BAD_REQUEST)
+        else:
+            serializer = QuestionnaireReportSerializer(questionnaire,
+                                                       context={'request': request})
+
+            return Response(serializer.data,
+                            status.HTTP_200_OK)
 
 
 class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):

@@ -22,6 +22,10 @@ class OptionNestSerializer(serializers.ModelSerializer):
         exclude = ['question']
 
 
+class QuestionBaseSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+
+
 class QuestionSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     option_list = OptionNestSerializer(many=True, required=False)
@@ -90,6 +94,7 @@ class QuestionnaireBaseSerializer(serializers.ModelSerializer):
             return res
 
 
+
 class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
     question_list = QuestionNestSerializer(many=True, required=False)
     '''
@@ -124,7 +129,6 @@ class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
         super().update(instance, validated_data)
         return instance
 
-
     class Meta:
         model = Questionnaire
         fields = '__all__'
@@ -143,4 +147,60 @@ class AnswerSheetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AnswerSheet
+        fields = '__all__'
+
+
+class AnswerSheetReportSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    respondent = UserDescSerializer(read_only=True)
+
+    class Meta:
+        model = AnswerSheet
+        fields = '__all__'
+
+
+class OptionReportSerializer(serializers.ModelSerializer):
+    number = serializers.SerializerMethodField()
+    answer_list = serializers.SerializerMethodField()
+    percent = serializers.SerializerMethodField()
+
+    def get_number(self, instance):
+        return instance.answer_list.count()
+
+    def get_percent(self, instance):
+        total = AnswerSheet.objects.filter(question_id=instance.question_id).\
+            values('ordering').distinct().count()
+        return instance.answer_list.count()/total
+
+
+    def get_answer_list(self, instance):
+        answer_list = instance.answer_list.all().order_by('ordering')
+        return AnswerSheetReportSerializer(answer_list, many=True).data
+
+    class Meta:
+        model = Option
+        fields = '__all__'
+
+
+class QuestionReportSerializer(QuestionBaseSerializer):
+    option_list = serializers.SerializerMethodField()
+
+    def get_option_list(self, instance):
+        option_list = instance.option_list.all().order_by('ordering')
+        return OptionReportSerializer(option_list, many=True).data
+
+    class Meta:
+        model = Question
+        fields = '__all__'
+
+
+class QuestionnaireReportSerializer(QuestionnaireBaseSerializer):
+    question_list = serializers.SerializerMethodField()
+
+    def get_question_list(self, instance):
+        question_list = instance.question_list.all().order_by('ordering')
+        return QuestionReportSerializer(question_list, many=True).data
+
+    class Meta:
+        model = Questionnaire
         fields = '__all__'
