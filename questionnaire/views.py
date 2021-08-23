@@ -128,7 +128,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
          '-last_shared_date', 'last_shared_date', 最后分享时间
         '-answer_num' 回收的问卷数
     '''
-    @action(detail=False, methods=['get'],
+    @action(detail=False, methods=['put'],
             url_path='sort', url_name='sort')
     def sort(self, request):
         user = request.user
@@ -141,7 +141,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         else:
             return Response({"message": "仅登录用户可进行排序"}, status=status.HTTP_401_UNAUTHORIZED)
 
-    @action(detail=False, methods=['get'],
+    @action(detail=False, methods=['put'],
             url_path='search', url_name='search')
     def search(self, request):
         user = request.user
