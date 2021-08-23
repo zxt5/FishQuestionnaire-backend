@@ -167,6 +167,7 @@ class OptionReportSerializer(serializers.ModelSerializer):
     number = serializers.SerializerMethodField()
     answer_list = serializers.SerializerMethodField()
     percent = serializers.SerializerMethodField()
+    percent_string = serializers.SerializerMethodField()
 
     def get_number(self, instance):
         return instance.answer_list.count()
@@ -174,7 +175,12 @@ class OptionReportSerializer(serializers.ModelSerializer):
     def get_percent(self, instance):
         total = AnswerSheet.objects.filter(question_id=instance.question_id). \
             values('ordering').distinct().count()
-        return format(instance.answer_list.count() / total * 100, '.2f')
+        return int(instance.answer_list.count() / total * 100 * 100) / 100
+
+    def get_percent_string(self, instance):
+        total = AnswerSheet.objects.filter(question_id=instance.question_id). \
+            values('ordering').distinct().count()
+        return format(instance.answer_list.count() / total * 100, '.2f')+"%"
 
     def get_answer_list(self, instance):
         answer_list = instance.answer_list.all().order_by('ordering')
