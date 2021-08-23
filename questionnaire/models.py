@@ -137,6 +137,10 @@ class Option(models.Model):
     answer = models.CharField(max_length=255,
                               blank=True,
                               verbose_name='参考答案')
+
+    # 字段限制
+    is_attr_limit = models.BooleanField(default=False, verbose_name="是否进行字段限制")
+    attr_limit_type = models.CharField(max_length=255,blank=True, verbose_name="字段限制类型")
     validator_regex = models.CharField(max_length=255,
                                        blank=True,
                                        verbose_name='以正则表达形式式存储的字段检查正则式')

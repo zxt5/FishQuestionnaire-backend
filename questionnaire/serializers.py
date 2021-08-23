@@ -94,12 +94,16 @@ class QuestionnaireBaseSerializer(serializers.ModelSerializer):
             return res
 
 
-
 class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
-    question_list = QuestionNestSerializer(many=True, required=False)
+    question_list = serializers.SerializerMethodField(required=False)
     '''
         解析问卷。一次性传入，然后看题目的id是否存在。类似于题目选项的写法，难点是封装成一个递归函数
     '''
+
+    def get_question_list(self, instance):
+        question_list = instance.question_list.all().order_by('ordering')
+        return QuestionNestSerializer(question_list, many=True).data
+
 
     def update(self, instance, validated_data):
         question_list_data = validated_data.get('question_list')
@@ -168,10 +172,9 @@ class OptionReportSerializer(serializers.ModelSerializer):
         return instance.answer_list.count()
 
     def get_percent(self, instance):
-        total = AnswerSheet.objects.filter(question_id=instance.question_id).\
+        total = AnswerSheet.objects.filter(question_id=instance.question_id). \
             values('ordering').distinct().count()
-        return instance.answer_list.count()/total
-
+        return instance.answer_list.count() / total
 
     def get_answer_list(self, instance):
         answer_list = instance.answer_list.all().order_by('ordering')
@@ -187,7 +190,7 @@ class QuestionReportSerializer(QuestionBaseSerializer):
     number = serializers.SerializerMethodField()
 
     def get_number(self, instance):
-        return AnswerSheet.objects.filter(question=instance).\
+        return AnswerSheet.objects.filter(question=instance). \
             values('ordering').distinct().count()
 
     def get_option_list(self, instance):

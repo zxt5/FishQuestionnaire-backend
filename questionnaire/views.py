@@ -97,7 +97,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     '''
-        '-created_time', 'created_time', '-last_shared_date', 'last_shared_date',
+        '-create_date', 'create_date', '-last_shared_date', 'last_shared_date',
         回收量？!
         '-answer_num'
     '''
@@ -119,7 +119,6 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         pk = request.data.get('id')
         questionnaire = Questionnaire.objects.get(id=pk)
 
-
         # 删除该问卷名下的所有答卷
         answer_list = AnswerSheet.objects.filter(questionnaire=questionnaire)
         answer_list.delete()
@@ -137,7 +136,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         count = AnswerSheet.objects.filter(questionnaire=questionnaire).count()
         if count == 0:
             no_answer_message = '此问卷暂时还没有答卷，请先回收答卷'
-            return Response({'message': no_answer_message },
+            return Response({'message': no_answer_message},
                             status.HTTP_400_BAD_REQUEST)
         else:
             serializer = QuestionnaireReportSerializer(questionnaire,
@@ -173,13 +172,13 @@ class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
         if old_ordering != new_ordering:
             if old_ordering < new_ordering:
                 question_list = Question.objects.filter(questionnaire_id=instance.questionnaire_id). \
-                    filter(ordering__lte=new_ordering).filter(ordering__gt=old_ordering).\
+                    filter(ordering__lte=new_ordering).filter(ordering__gt=old_ordering). \
                     exclude(id=instance.id)
                 question_list.update(ordering=F('ordering') - 1)
 
             else:
                 question_list = Question.objects.filter(questionnaire_id=instance.questionnaire_id). \
-                    filter(ordering__lt=old_ordering).filter(ordering__gte=new_ordering).\
+                    filter(ordering__lt=old_ordering).filter(ordering__gte=new_ordering). \
                     exclude(id=instance.id)
                 question_list.update(ordering=F('ordering') + 1)
 
