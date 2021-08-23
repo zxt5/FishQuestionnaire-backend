@@ -48,12 +48,12 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
     # filter_backends = [filters.SearchFilter]
     # search_fields = ['title']
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_authenticated:
-            return Questionnaire.objects.filter(author=user)
-        else:
-            return Questionnaire.objects.none()
+    # def get_queryset(self):
+    #     user = self.request.user
+    #     if user.is_authenticated:
+    #         return Questionnaire.objects.filter(author=user)
+    #     else:
+    #         return Questionnaire.objects.none()
 
 
     def get_serializer_class(self):
