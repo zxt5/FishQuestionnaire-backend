@@ -45,6 +45,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
 
     filter_backends = [DjangoFilterBackend]
     filterset_class = QuestionnaireFilter
+
     # filter_backends = [filters.SearchFilter]
     # search_fields = ['title']
 
@@ -54,7 +55,6 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
     #         return Questionnaire.objects.filter(author=user)
     #     else:
     #         return Questionnaire.objects.none()
-
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -128,6 +128,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
          '-last_shared_date', 'last_shared_date', 最后分享时间
         '-answer_num' 回收的问卷数
     '''
+
     @action(detail=False, methods=['put'],
             url_path='sort', url_name='sort')
     def sort(self, request):
@@ -154,14 +155,12 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         else:
             return Response({"message": "仅登录用户可进行搜索"}, status=status.HTTP_401_UNAUTHORIZED)
 
-
     # 删除指定id问卷的所有答卷
     @action(detail=False, methods=['put'],
             url_path='delete-all-answer', url_name='delete-all-answer')
     def delete_all_answer(self, request):
 
         pk = request.data.get('id')
-        print(pk)
         questionnaire = Questionnaire.objects.get(id=pk)
 
         # 删除该问卷名下的所有答卷
@@ -192,11 +191,11 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
 
     # 导出excel
     @action(detail=True, methods=['get'],
-            url_path='export-xls',url_name='export-xls')
+            url_path='export-xls', url_name='export-xls')
     def export_xls(self, request, pk=None):
         response = Response(content_type='application/ms-excel')
         response['Content-Disposition'] = 'attachment; filename=Expenses' + \
-            str(timezone.now()) + '.xls'
+                                          str(timezone.now()) + '.xls'
         workbook = xlwt.Workbook(encoding='utf-8')
         worksheet = workbook.add_sheet('origin_data')
         row_num = 0
@@ -208,7 +207,6 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
             worksheet.write(row_num, col_num, columns[col_num], font_style)
 
         rows = AnswerSheet.objects.filter(questionnaire_id=pk)
-
 
     # # 导出Excel
     # def get_renderers(self):
@@ -276,13 +274,12 @@ class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
             question_list.update(ordering=F('ordering') + 1)
         else:
             questionnaire = serializer.validated_data.get('questionnaire', None)
-            max_ordering = Question.objects.filter(questionnaire=questionnaire).\
+            max_ordering = Question.objects.filter(questionnaire=questionnaire). \
                 order_by('-ordering').first().ordering
             if max_ordering is None:
                 max_ordering = 0
             max_ordering = max_ordering + 1
             serializer.save(ordering=max_ordering)
-
 
     @action(detail=False, methods=['post'],
             url_path='copy', url_name='copy')
