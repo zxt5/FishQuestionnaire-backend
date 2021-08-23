@@ -174,7 +174,7 @@ class OptionReportSerializer(serializers.ModelSerializer):
     def get_percent(self, instance):
         total = AnswerSheet.objects.filter(question_id=instance.question_id). \
             values('ordering').distinct().count()
-        return instance.answer_list.count() / total
+        return format(instance.answer_list.count() / total * 100, '.2f')
 
     def get_answer_list(self, instance):
         answer_list = instance.answer_list.all().order_by('ordering')
