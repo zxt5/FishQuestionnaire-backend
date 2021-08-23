@@ -1,5 +1,4 @@
-from rest_framework.serializers import raise_errors_on_nested_writes
-from rest_framework.utils import model_meta
+from rest_pandas import PandasSerializer
 
 from questionnaire.models import Questionnaire, Question, Option, AnswerSheet
 from rest_framework import serializers
@@ -29,6 +28,7 @@ class QuestionBaseSerializer(serializers.ModelSerializer):
 class QuestionSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     option_list = OptionNestSerializer(many=True, required=False)
+    ordering = serializers.IntegerField(required=False)
 
     def create(self, validated_data):
         option_list_data = validated_data.get('option_list')
@@ -218,3 +218,12 @@ class QuestionnaireReportSerializer(QuestionnaireBaseSerializer):
     class Meta:
         model = Questionnaire
         fields = '__all__'
+
+
+# class QuestionnaireExportSerializer(QuestionnaireBaseSerializer):
+#     question_list = QuestionNestSerializer(many=True, required=False)
+#
+#     class Meta:
+#         model = Questionnaire
+#         list_serializer_class = PandasSerializer
+#         fields = '__all__'

@@ -1,4 +1,4 @@
-from datetime import datetime
+from rest_pandas import PandasView, PandasExcelRenderer, PandasViewSet, PandasCSVRenderer
 
 from django.db.models import F
 from django.utils import timezone
@@ -97,11 +97,9 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     '''
-        '-create_date', 'create_date', '-last_shared_date', 'last_shared_date',
-        回收量？!
+        '-create_date', 'create_date', '-last_shared_date', 'last_shared_date', 排序字段
         '-answer_num'
     '''
-
     @action(detail=False, methods=['get'],
             url_path='sort', url_name='sort')
     def sort(self, request):
@@ -146,6 +144,26 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
                             status.HTTP_200_OK)
 
 
+
+    # # 导出Excel
+    # def get_renderers(self):
+    #     if self.action == 'exportxls':
+    #         renderer_classes = [PandasExcelRenderer]
+    #         return [renderer() for renderer in renderer_classes]
+    #     else:
+    #         return super().get_renderers()
+    #
+    #
+    # @action(detail=True)
+    # def exportxls(self, request, pk):
+    #     queryset = Questionnaire.objects.filter(id=pk)
+    #     return Response(
+    #         QuestionnaireExportSerializer(
+    #             queryset, many=True,
+    #             context={'request': request}).data, status.HTTP_200_OK)
+    #     # return Response(QuestionnaireExportSerializer(queryset, many=True).data, status.HTTP_200_OK)
+
+
 class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
@@ -183,12 +201,23 @@ class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
                 question_list.update(ordering=F('ordering') + 1)
 
     def perform_create(self, serializer):
-        instance = serializer.save()
-        questionnaire_id = instance.questionnaire_id
-        ordering = instance.ordering
-        question_list = Question.objects.filter(questionnaire_id=questionnaire_id). \
-            filter(ordering__gte=ordering).exclude(id=instance.id)
-        question_list.update(ordering=F('ordering') + 1)
+        ordering = serializer.validated_data.get('ordering', None)
+        if ordering is not None:
+            instance = serializer.save()
+            questionnaire_id = instance.questionnaire_id
+            ordering = instance.ordering
+            question_list = Question.objects.filter(questionnaire_id=questionnaire_id). \
+                filter(ordering__gte=ordering).exclude(id=instance.id)
+            question_list.update(ordering=F('ordering') + 1)
+        else:
+            questionnaire = serializer.validated_data.get('questionnaire', None)
+            max_ordering = Question.objects.filter(questionnaire=questionnaire).\
+                order_by('-ordering').first().ordering
+            if max_ordering is None:
+                max_ordering = 0
+            max_ordering = max_ordering + 1
+            serializer.save(ordering=max_ordering)
+
 
     @action(detail=False, methods=['post'],
             url_path='copy', url_name='copy')
