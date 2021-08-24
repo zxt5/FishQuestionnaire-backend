@@ -274,10 +274,12 @@ class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
             question_list.update(ordering=F('ordering') + 1)
         else:
             questionnaire = serializer.validated_data.get('questionnaire', None)
-            max_ordering = Question.objects.filter(questionnaire=questionnaire). \
-                order_by('-ordering').first().ordering
-            if max_ordering is None:
+            first_question = Question.objects.filter(questionnaire=questionnaire). \
+                order_by('-ordering').first()
+            if first_question is None:
                 max_ordering = 0
+            else:
+                max_ordering = first_question.ordering
             max_ordering = max_ordering + 1
             serializer.save(ordering=max_ordering)
 
