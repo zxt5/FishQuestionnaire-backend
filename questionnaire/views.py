@@ -12,6 +12,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from questionnaire.permissions import IsSelfOrReadOnly
 from questionnaire.serializers import QuestionnaireDetailSerializer, QuestionnaireListSerializer, OptionSerializer, \
     QuestionSerializer, AnswerSheetSerializer, QuestionReportSerializer, QuestionnaireReportSerializer
 from questionnaire.models import Questionnaire, Question, Option, AnswerSheet
@@ -42,6 +43,7 @@ class QuestionnaireFilter(FilterSet):
 class QuestionnaireViewSet(viewsets.ModelViewSet):
     queryset = Questionnaire.objects.all()
     serializer_class = QuestionnaireDetailSerializer
+    permission_classes = [IsSelfOrReadOnly]
 
     filter_backends = [DjangoFilterBackend]
     filterset_class = QuestionnaireFilter
@@ -242,6 +244,8 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
 class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
+    permission_classes = [IsSelfOrReadOnly]
+
     '''
         删除之前更新list，使其ordering-1。 删除问题的同时，选项也该被删除。
         如果更新时，其实例的ordering改变了，那么就找出被交换的另一方，进行属性更新
@@ -325,6 +329,7 @@ class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
 class OptionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = Option.objects.all()
     serializer_class = OptionSerializer
+    permission_classes = [IsSelfOrReadOnly]
 
     def perform_destroy(self, instance):
         option_list = Option.objects.filter(question_id=instance.question_id). \
