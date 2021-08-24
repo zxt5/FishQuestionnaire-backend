@@ -190,23 +190,35 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
                             status.HTTP_200_OK)
 
     # 导出excel
-    @action(detail=True, methods=['get'],
-            url_path='export-xls', url_name='export-xls')
-    def export_xls(self, request, pk=None):
-        response = Response(content_type='application/ms-excel')
-        response['Content-Disposition'] = 'attachment; filename=Expenses' + \
-                                          str(timezone.now()) + '.xls'
-        workbook = xlwt.Workbook(encoding='utf-8')
-        worksheet = workbook.add_sheet('origin_data')
-        row_num = 0
-        font_style = xlwt.XFStyle()
-        font_style.font.bold = True
-
-        columns = ['回收问卷序号', 'IP', '题目描述', '题目序号', '选项描述', '选项序号']
-        for col_num in range(len(columns)):
-            worksheet.write(row_num, col_num, columns[col_num], font_style)
-
-        rows = AnswerSheet.objects.filter(questionnaire_id=pk)
+    # @action(detail=True, methods=['get'],
+    #         url_path='export-xls', url_name='export-xls')
+    # def export_xls(self, request, pk=None):
+    #     response = Response(content_type='application/ms-excel')
+    #     response['Content-Disposition'] = 'attachment; filename=Expenses' + \
+    #                                       str(timezone.now()) + '.xls'
+    #     workbook = xlwt.Workbook(encoding='utf-8')
+    #     worksheet = workbook.add_sheet('origin_data')
+    #     row_num = 0
+    #     font_style = xlwt.XFStyle()
+    #     font_style.font.bold = True
+    #
+    #     columns = ['回收问卷序号', 'IP', '题目描述', '题目序号', '选项描述', '选项序号']
+    #     for col_num in range(len(columns)):
+    #         worksheet.write(row_num, col_num, columns[col_num], font_style)
+    #
+    #     pre_len = len(columns)
+    #
+    #     question_list = Question.objects.filter(questionnaire_id=pk).order_by('ordering')
+    #
+    #     for question in question_list:
+    #         option_list = Option.objects.filter(question=question).order_by('ordering')
+    #         for option in option_list:
+    #             column_str = question.ordering + question.title + option.title + '[' + question.type + ']'
+    #             answer_list = AnswerSheet.objects.filter(option=option).order_by('ordering')
+    #             for answer in answer_list:
+    #                 if answer.content
+    #                 worksheet.write(answer.ordering, )
+        # rows = AnswerSheet.objects.filter(questionnaire_id=pk)
 
     # # 导出Excel
     # def get_renderers(self):
