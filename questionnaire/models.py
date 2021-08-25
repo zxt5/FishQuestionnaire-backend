@@ -42,7 +42,7 @@ class Questionnaire(models.Model):
         verbose_name='问卷类型',
     )
 
-    answer_num = models.IntegerField(default=0, blank=True, verbose_name='回收问卷数')
+    # answer_num = models.IntegerField(default=0, blank=True, verbose_name='回收问卷数')
 
     is_locked = models.BooleanField(default=False, verbose_name="访问是否需要密码")
     password = models.CharField(max_length=255, blank=True, default='', verbose_name="访问密码")
@@ -152,29 +152,38 @@ class AnswerSheet(models.Model):
         to='Questionnaire',
         on_delete=models.CASCADE,
         verbose_name='问卷',
-        related_name='answer_list'
+        related_name='answer_sheet_list'
     )
-    question = models.ForeignKey(
-        to='Question',
-        on_delete=models.CASCADE,
-        verbose_name='题目',
-        related_name='answer_list'
-    )
-    option = models.ForeignKey(
-        to='Option',
-        on_delete=models.CASCADE,
-        verbose_name='选项',
-        related_name='answer_list'
-    )
-    ordering = models.PositiveIntegerField(verbose_name='答卷序号', blank=True, null=True)
     respondent = models.ForeignKey(
         to=User,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
         verbose_name='答卷人',
-        related_name='answer_list'
+        related_name='answer_sheet_list'
     )
-    modified_time = models.DateTimeField(default=timezone.now, verbose_name='回答时间')
+    started_time = models.DateTimeField(default=timezone.now, verbose_name='回答开始时间')
+    modified_time = models.DateTimeField(default=timezone.now, verbose_name='回答结束时间')
     ip = models.CharField(max_length=255, blank=True, verbose_name='用户IP地址')
+
+
+class AnswerDetail(models.Model):
+    sheet = models.ForeignKey(
+        to='AnswerSheet',
+        on_delete=models.CASCADE,
+        verbose_name='答卷',
+        related_name='answer_detail_list'
+    )
+    question = models.ForeignKey(
+        to='Question',
+        on_delete=models.CASCADE,
+        verbose_name='题目',
+        related_name='answer_detail_list'
+    )
+    option = models.ForeignKey(
+        to='Option',
+        on_delete=models.CASCADE,
+        verbose_name='选项',
+        related_name='answer_detail_list'
+    )
     content = models.TextField(blank=True, null=True, verbose_name='选项填空内容')

@@ -1,14 +1,14 @@
-import base64
-from io import BytesIO
+from datetime import datetime
 
 import django_filters
+import pytz
 import xlwt
 from django.http import HttpResponse
 from django_filters import BaseInFilter, CharFilter
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_pandas import PandasView, PandasExcelRenderer, PandasViewSet, PandasCSVRenderer
 
-from django.db.models import F
+from django.db.models import F, Count
 from django.utils import timezone
 
 from rest_framework import filters, status
@@ -45,7 +45,7 @@ class QuestionnaireFilter(FilterSet):
 
 
 class QuestionnaireViewSet(viewsets.ModelViewSet):
-    queryset = Questionnaire.objects.all()
+    queryset = Questionnaire.objects.annotate(answer_num=Count('answer_sheet_list'))
     serializer_class = QuestionnaireDetailSerializer
     # permission_classes = [IsSelfOrReadOnly]
 
@@ -141,7 +141,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         user = request.user
         if user.is_authenticated:
             keyword = request.data.get('keyword')
-            questionnaire_list = Questionnaire.objects.exclude(status='deleted') \
+            questionnaire_list = self.queryset.exclude(status='deleted') \
                 .filter(author=user).order_by(keyword)
             serializers = QuestionnaireListSerializer(questionnaire_list, context={'request': request}, many=True)
             return Response(serializers.data, status.HTTP_200_OK)
@@ -172,7 +172,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         # 删除该问卷名下的所有答卷
         answer_list = AnswerSheet.objects.filter(questionnaire=questionnaire)
         answer_list.delete()
-        questionnaire.answer_num = 0
+        # questionnaire.answer_num = 0
 
         serializers = QuestionnaireDetailSerializer(questionnaire, context={'request': request})
         return Response(serializers.data, status.HTTP_200_OK)
@@ -200,46 +200,64 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
             url_path='export-xls', url_name='export-xls')
     def export_xls(self, request, pk=None):
         response = HttpResponse(content_type='application/ms-excel')
-        response['Content-Disposition'] = 'attachment; filename=' +'Questionnaire_' + str(pk) + '_'+ \
-                                          str(timezone.now()) + '.xls'
+        response['Content-Disposition'] = 'attachment; filename=' + 'Questionnaire_' + str(pk) + '.xls'
         workbook = xlwt.Workbook(encoding='utf-8')
         worksheet = workbook.add_sheet('origin_data')
         font_style = xlwt.XFStyle()
 
-        columns = ['ordering', 'ip']
-        trans_dic = {'ordering': '回收问卷序号', 'ip': 'ip'}
-        ans_list = list(AnswerSheet.objects.filter(questionnaire_id=pk).values('ordering', 'ip').distinct())
+        # 确定额外的信息
+        columns = ['ip', 'modified_time']
+        trans_dic = {'ip': 'ip', 'modified_time': '提交答题时间'}
+        # 获取答卷表单，确定顺序不变
+        answer_list = AnswerSheet.objects.filter(questionnaire_id=pk).order_by('modified_time')
+        ans_list = answer_list.values_list('ip', 'modified_time')
+
+        # 首先填写额外的信息
 
         for col_num in range(len(columns)):
             row_num = 0
             worksheet.write(row_num, col_num, trans_dic[columns[col_num]], font_style)
+            row_num += 1
             for ans in ans_list:
-                worksheet.write(ans['ordering'], col_num, ans[columns[col_num]], font_style)
+                data = ans[col_num]
+                if isinstance(data, datetime):
+                    data = data.astimezone(pytz.timezone('Asia/Shanghai')).strftime(
+                                        '%Y-%m-%d %H:%M:%S')
+                worksheet.write(row_num, col_num, data, font_style)
+                row_num = row_num + 1
 
-        pre_len = len(columns)
+        col_num = len(columns)
 
         question_list = Question.objects.filter(questionnaire_id=pk).order_by('ordering')
         question_type_dic = {'multiple-choice': '多选题', 'single-choice': '单选题', 'completion': '填空题',
                              'scoring': '评分题'}
 
+        option_pos_dic = {}
         for question in question_list:
             option_list = Option.objects.filter(question=question).order_by('ordering')
             for option in option_list:
                 column_str = ''.join([str(question.ordering), '.',
                                       question.title, ':', option.title, '[',
                                       question_type_dic.get(question.type, '未知题目类型'), ']'])
-                worksheet.write(0, pre_len, column_str, font_style)
-                answer_list = AnswerSheet.objects.filter(option=option).order_by('ordering')
-                for answer in answer_list:
-                    if answer.content:
-                        worksheet.write(answer.ordering, pre_len, answer.content, font_style)
-                    else:
-                        worksheet.write(answer.ordering, pre_len, 1, font_style)
-                pre_len = pre_len + 1
+                worksheet.write(0, col_num, column_str, font_style)
+                option_pos_dic[option.pk] = col_num
+                # option_pos_dic.update({option.pk, col_num})
+                col_num = col_num + 1
+        # 一行行填写答案
+        row_num = 1
+        for answer in answer_list:
+            answer_detail_list = answer.answer_detail_list.all()
+            for answer_detail in answer_detail_list:
+                if answer_detail.content:
+                    worksheet.write(row_num, option_pos_dic.get(answer_detail.option.id),
+                                    answer_detail.content, font_style)
+                else:
+                    worksheet.write(row_num, option_pos_dic.get(answer_detail.option.id),
+                                    1, font_style)
+            row_num += 1
 
         workbook.save(response)
         return response
-
 
 
 class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
@@ -361,15 +379,3 @@ class OptionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
 class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = AnswerSheet.objects.all()
     serializer_class = AnswerSheetSerializer
-
-    def perform_create(self, serializer):
-        max_ordering = 1
-        questionnaire_id = serializer.data[0].get('questionnaire')
-        entity = AnswerSheet.objects.filter(questionnaire_id=questionnaire_id). \
-            order_by('-ordering').first()
-        if entity is not None:
-            max_ordering = entity.ordering + 1
-        questionnaire = Questionnaire.objects.get(id=questionnaire_id)
-        questionnaire.answer_num = max_ordering
-        questionnaire.save()
-        serializer.save(ordering=max_ordering)

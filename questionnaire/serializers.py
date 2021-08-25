@@ -1,6 +1,6 @@
 from rest_pandas import PandasSerializer
 
-from questionnaire.models import Questionnaire, Question, Option, AnswerSheet
+from questionnaire.models import Questionnaire, Question, Option, AnswerSheet, AnswerDetail
 from rest_framework import serializers
 from user_info.serializers import UserDescSerializer
 
@@ -30,6 +30,10 @@ class QuestionSerializer(serializers.ModelSerializer):
     option_list = OptionNestSerializer(many=True, required=False)
     ordering = serializers.IntegerField(required=False)
 
+    class Meta:
+        model = Question
+        fields = '__all__'
+
     def create(self, validated_data):
         option_list_data = validated_data.get('option_list')
         if option_list_data is not None:
@@ -42,10 +46,6 @@ class QuestionSerializer(serializers.ModelSerializer):
                 option['id'] = None
                 Option.objects.create(question=question, **option)
         return question
-
-    class Meta:
-        model = Question
-        fields = '__all__'
 
     def update(self, instance, validated_data):
         option_list_data = validated_data.get('option_list')
@@ -85,14 +85,7 @@ class QuestionnaireBaseSerializer(serializers.ModelSerializer):
     answer_num = serializers.SerializerMethodField()
 
     def get_answer_num(self, questionnaire):
-        res = questionnaire.answer_list.filter(questionnaire=questionnaire).order_by('-ordering').first()
-        if res is None:
-            return 0
-        else:
-            res = res.ordering
-            if res is None:
-                return 0
-            return res
+        return questionnaire.answer_sheet_list.count()
 
 
 class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
@@ -146,21 +139,54 @@ class QuestionnaireListSerializer(QuestionnaireBaseSerializer):
         read_only_fields = ['id', 'title']
 
 
+class AnswerDetailNestSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=False, required=False)
+
+    class Meta:
+        model = AnswerDetail
+        exclude = ['sheet']
+
+
 class AnswerSheetSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     respondent = UserDescSerializer(read_only=True)
+    answer_list = AnswerDetailNestSerializer(many=True,
+                                             required=False)
 
     class Meta:
         model = AnswerSheet
         fields = '__all__'
 
+    def create(self, validated_data):
+        answer_list_data = validated_data.get('answer_list')
+        if answer_list_data is not None:
+            validated_data.pop('answer_list')
 
-class AnswerSheetReportSerializer(serializers.ModelSerializer):
+        answer_sheet = AnswerSheet.objects.create(**validated_data)
+
+        if answer_list_data is not None:
+            for answer_list_detail in answer_list_data:
+                answer_list_detail['id'] = None
+                AnswerDetail.objects.create(sheet=answer_sheet,
+                                            **answer_list_detail)
+        return answer_sheet
+
+
+class AnswerDetailReportSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
-    respondent = UserDescSerializer(read_only=True)
+    respondent = serializers.SerializerMethodField()
+    ip = serializers.SerializerMethodField(read_only=True)
+
+
+    def get_ip(self, instance):
+        return instance.sheet.ip
+
+    def get_respondent(self, instance):
+        respondent = instance.sheet.respondent
+        return UserDescSerializer(respondent).data
 
     class Meta:
-        model = AnswerSheet
+        model = AnswerDetail
         fields = '__all__'
 
 
@@ -171,27 +197,33 @@ class OptionReportSerializer(serializers.ModelSerializer):
     percent_string = serializers.SerializerMethodField()
 
     def get_number(self, instance):
-        return instance.answer_list.count()
+        return instance.answer_detail_list.count()
 
     def get_percent(self, instance):
-        total = AnswerSheet.objects.filter(question_id=instance.question_id). \
-            values('ordering').distinct().count()
+        option_num = instance.answer_detail_list.count()
+        total = instance.question.answer_detail_list.count()
         if total != 0:
-            return int(instance.answer_list.count() / total * 100 * 100) / 100
+            return int(option_num / total * 100 * 100) / 100
         else:
             return 0
+        # total = AnswerSheet.objects.filter(question_id=instance.question_id). \
+        #     values('ordering').distinct().count()
+        # if total != 0:
+        #     return int(instance.answer_list.count() / total * 100 * 100) / 100
+        # else:
+        #     return 0
 
     def get_percent_string(self, instance):
-        total = AnswerSheet.objects.filter(question_id=instance.question_id). \
-            values('ordering').distinct().count()
+        option_num = instance.answer_detail_list.count()
+        total = instance.question.answer_detail_list.count()
         if total != 0:
-            return format(instance.answer_list.count() / total * 100, '.2f')+"%"
+            return format(option_num / total * 100, '.2f')+"%"
         else:
             return '0'
 
     def get_answer_list(self, instance):
-        answer_list = instance.answer_list.all().order_by('ordering')
-        return AnswerSheetReportSerializer(answer_list, many=True).data
+        answer_list = instance.answer_detail_list.all()
+        return AnswerDetailReportSerializer(answer_list, many=True).data
 
     class Meta:
         model = Option
@@ -203,8 +235,9 @@ class QuestionReportSerializer(QuestionBaseSerializer):
     number = serializers.SerializerMethodField()
 
     def get_number(self, instance):
-        return AnswerSheet.objects.filter(question=instance). \
-            values('ordering').distinct().count()
+        return AnswerDetail.objects.filter(question=instance).count()
+        # return AnswerSheet.objects.filter(question=instance). \
+        #     values('ordering').distinct().count()
 
     def get_option_list(self, instance):
         option_list = instance.option_list.all().order_by('ordering')
@@ -227,10 +260,3 @@ class QuestionnaireReportSerializer(QuestionnaireBaseSerializer):
         fields = '__all__'
 
 
-# class QuestionnaireExportSerializer(QuestionnaireBaseSerializer):
-#     question_list = QuestionNestSerializer(many=True, required=False)
-#
-#     class Meta:
-#         model = Questionnaire
-#         list_serializer_class = PandasSerializer
-#         fields = '__all__'
