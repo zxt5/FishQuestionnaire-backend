@@ -1,7 +1,6 @@
-from rest_pandas import PandasSerializer
+from rest_framework import serializers
 
 from questionnaire.models import Questionnaire, Question, Option, AnswerSheet, AnswerDetail
-from rest_framework import serializers
 from user_info.serializers import UserDescSerializer
 
 
