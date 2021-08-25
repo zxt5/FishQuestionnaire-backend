@@ -1,5 +1,5 @@
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
 # Create your models here.
 from django.utils import timezone
 
@@ -68,6 +68,9 @@ class Questionnaire(models.Model):
     class Meta:
         ordering = ['-create_date']
 
+    def __str__(self):
+        return '_'.join([str(self.pk), self.title])
+
 
 class Question(models.Model):
     questionnaire = models.ForeignKey(
@@ -111,6 +114,9 @@ class Question(models.Model):
     question_score = models.IntegerField(default=0, blank=True, null=True, verbose_name='题目分数')
     answer = models.TextField(blank=True, verbose_name='参考答案')
 
+    def __str__(self):
+        return '_'.join([str(self.pk), self.title])
+
 
 class Option(models.Model):
     question = models.ForeignKey(
@@ -145,6 +151,9 @@ class Option(models.Model):
                                        blank=True,
                                        verbose_name='以正则表达形式式存储的字段检查正则式')
     is_must_answer = models.BooleanField(default=False, verbose_name='是否必答')
+
+    def __str__(self):
+        return '_'.join([str(self.pk), self.title])
 
 
 class AnswerSheet(models.Model):
