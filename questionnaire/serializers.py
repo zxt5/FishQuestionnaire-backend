@@ -276,7 +276,7 @@ class OptionSignUPSerializer(serializers.ModelSerializer):
 
 
     class Meta:
-        model = Question
+        model = Option
         fields = '__all__'
 
 
@@ -293,6 +293,7 @@ class QuestionSignUPSerializer(serializers.ModelSerializer):
 
 
 class QuestionnaireSignUPSerializer(QuestionnaireBaseSerializer):
+    number = serializers.SerializerMethodField()
     question_list = serializers.SerializerMethodField(required=False)
 
     def get_number(self, instance):
@@ -303,3 +304,7 @@ class QuestionnaireSignUPSerializer(QuestionnaireBaseSerializer):
     def get_question_list(self, instance):
         question_list = instance.question_list.all().order_by('ordering')
         return QuestionSignUPSerializer(question_list, many=True).data
+
+    class Meta:
+        model = Questionnaire
+        fields = '__all__'
