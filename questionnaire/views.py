@@ -3,7 +3,7 @@ from datetime import datetime
 import django_filters
 import pytz
 import xlwt
-from django.db.models import F, Count
+from django.db.models import F, Count, Q
 from django.http import HttpResponse
 from django.utils import timezone
 from django_filters import BaseInFilter, CharFilter
@@ -218,7 +218,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
                 data = ans[col_num]
                 if isinstance(data, datetime):
                     data = data.astimezone(pytz.timezone('Asia/Shanghai')).strftime(
-                                        '%Y-%m-%d %H:%M:%S')
+                        '%Y-%m-%d %H:%M:%S')
                 worksheet.write(row_num, col_num, data, font_style)
                 row_num = row_num + 1
 
@@ -254,6 +254,32 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
 
         workbook.save(response)
         return response
+
+    # 交叉分析接口
+    @action(detail=True, methods=['put'],
+            url_path='cross-analysis', url_name='cross-analysis')
+    def cross_analysis(self, request, pk=None):
+        question_x_list = request['question_x_list']
+        question_y_list = request['question_y_list']
+        questionnaire = Questionnaire.objects.get(id=pk)
+        cross_table = {}
+        question_x = Question.objects.get(pk=question_x_list[0])
+        question_y = Question.objects.get(pk=question_y_list[0])
+
+        option_x_list = question_x.option_list.all()
+        option_y_list = question_y.option_list.all()
+
+        for option_x in option_x_list:
+            x = option_x.title
+            cross_table[x] = []
+
+            for option_y in option_y_list:
+                y = option_y.title
+                num = AnswerSheet.objects.filter(questionnaire=questionnaire) \
+                    .filter(Q(answer_detail_list__option__id=option_x.id) &
+                            Q(answer_detail_list__option__id=option_y.id)).count()
+                print({y: num})
+                cross_table[x].append({y: num})
 
 
 class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
@@ -375,3 +401,9 @@ class OptionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
 class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = AnswerSheet.objects.all()
     serializer_class = AnswerSheetSerializer
+
+    def perform_create(self, serializer):
+        if self.request.user.is_authenticated:
+            serializer.save(respondent=self.request.user)
+        else:
+            serializer.save()

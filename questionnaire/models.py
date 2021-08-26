@@ -42,7 +42,7 @@ class Questionnaire(models.Model):
         verbose_name='问卷类型',
     )
 
-    # answer_num = models.IntegerField(default=0, blank=True, verbose_name='回收问卷数')
+    # 截止时间功能等
 
     is_locked = models.BooleanField(default=False, verbose_name="访问是否需要密码")
     password = models.CharField(max_length=255, blank=True, default='', verbose_name="访问密码")
