@@ -175,10 +175,14 @@ class AnswerDetailReportSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     respondent = serializers.SerializerMethodField()
     ip = serializers.SerializerMethodField(read_only=True)
-
+    modified_time = serializers.SerializerMethodField(read_only=True)
 
     def get_ip(self, instance):
         return instance.sheet.ip
+
+    def get_modified_time(self, instance):
+        return instance.sheet.modified_time
+
 
     def get_respondent(self, instance):
         respondent = instance.sheet.respondent
