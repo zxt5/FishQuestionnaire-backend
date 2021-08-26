@@ -296,7 +296,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
             serializer_class=QuestionnaireSignUPSerializer)
     def sign_up_detail(self, request, pk=None):
         questionnaire = Questionnaire.objects.get(pk=pk)
-        serializer = self.get_serializer(questionnaire,
+        serializer = QuestionnaireSignUPSerializer(questionnaire,
                                          context={'request': request})
 
         return Response(serializer.data,
