@@ -3,8 +3,8 @@ from datetime import datetime
 import django_filters
 import pytz
 import xlwt
-from django.db.models import F, Count, Q
-from django.http import HttpResponse
+from django.db.models import F, Count
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django_filters import BaseInFilter, CharFilter
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
@@ -260,10 +260,11 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['put'],
             url_path='cross-analysis', url_name='cross-analysis')
     def cross_analysis(self, request, pk=None):
-        question_x_list = request['question_x_list']
-        question_y_list = request['question_y_list']
+        question_x_list = request.data['question_x_list']
+        question_y_list = request.data['question_y_list']
         questionnaire = Questionnaire.objects.get(id=pk)
         cross_table = {}
+
         question_x = Question.objects.get(pk=question_x_list[0])
         question_y = Question.objects.get(pk=question_y_list[0])
 
@@ -277,14 +278,17 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
             for option_y in option_y_list:
                 y = option_y.title
                 answer_sheet_list = AnswerSheet.objects.filter(questionnaire=questionnaire)
-
-                num = AnswerSheet.objects.filter(questionnaire=questionnaire) \
-                    .filter(Q(answer_detail_list__option__id=option_x.id) &
-                            Q(answer_detail_list__option__id=option_y.id)).count()
+                answer_sheet_x = answer_sheet_list.filter(answer_detail_list__option__id=option_x.id)
+                answer_sheet_y = answer_sheet_list.filter(answer_detail_list__option__id=option_y.id)
+                num = (answer_sheet_x | answer_sheet_y).count()
+                # num = AnswerSheet.objects.filter(questionnaire=questionnaire) \
+                #     .filter(Q(answer_detail_list__option__id=option_x.id) &
+                #             Q(answer_detail_list__option__id=option_y.id)).count()
                 print({y: num})
                 cross_table[x].append({y: num})
-
-
+        response = JsonResponse(cross_table)
+        response.status_code = 200
+        return response
 
 
 class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
@@ -406,6 +410,32 @@ class OptionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
 class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = AnswerSheet.objects.all()
     serializer_class = AnswerSheetSerializer
+
+    def create(self, request, *args, **kwargs):
+        # 作为原子操作判断数据库限额，如果
+        questionnaire = Questionnaire.objects.get(pk=request.data['questionnaire'])
+        if questionnaire.is_limit_answer:
+            total_questionnaire_answer_num = questionnaire.get_answer_num()
+            delta = questionnaire.limit_answer_number - total_questionnaire_answer_num
+            if delta <= 0:
+                return Response({"message": "限额已满！无法提交！"},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+        answer_list = request.data['answer_list']
+        for answer in answer_list:
+            option = Question.objects.get(pk=answer.option)
+            if option.is_limit_answer:
+                delta = option.limit_answer_number - option.get_answer_num()
+                if delta <= 0:
+                    return Response({"message": "限额已满！无法提交！"},
+                                    status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
         if self.request.user.is_authenticated:

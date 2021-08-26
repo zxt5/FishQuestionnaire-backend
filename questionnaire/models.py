@@ -42,6 +42,12 @@ class Questionnaire(models.Model):
         verbose_name='问卷类型',
     )
 
+    # 是否限制作答
+    is_limit_answer = models.BooleanField(default=False, verbose_name='是否限制该问卷作答人数')
+    limit_answer_number = models.IntegerField(default=0, verbose_name='该问卷限制的作答人数')
+
+
+
     # 是否显示题号
     is_show_question_num = models.BooleanField(default=True,
                                                verbose_name="是否显示题号")
@@ -73,6 +79,9 @@ class Questionnaire(models.Model):
 
     def __str__(self):
         return '_'.join([str(self.pk), self.title])
+
+    def get_answer_num(self):
+        return AnswerSheet.objects.filter(questionnaire__id=self.pk).count()
 
 
 class Question(models.Model):
@@ -157,6 +166,9 @@ class Option(models.Model):
 
     def __str__(self):
         return '_'.join([str(self.pk), self.title])
+
+    def get_answer_num(self):
+        return AnswerDetail.objects.filter(option__id=self.pk).count()
 
 
 class AnswerSheet(models.Model):
