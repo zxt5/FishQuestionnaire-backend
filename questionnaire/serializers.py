@@ -177,7 +177,7 @@ class AnswerDetailReportSerializer(serializers.ModelSerializer):
     ip = serializers.SerializerMethodField(read_only=True)
     modified_time = serializers.SerializerMethodField(read_only=True)
     ordering = serializers.SerializerMethodField(read_only=True)
-
+    # ordering为0的原因是，方便前端修改增加序号等。
     def get_ordering(self, instance):
         return 0
 

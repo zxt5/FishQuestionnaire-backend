@@ -101,6 +101,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         questionnaire_obj.last_shared_date = None
         questionnaire_obj.modify_date = timezone.now()
         questionnaire_obj.status = 'closed'
+        questionnaire_obj.title = questionnaire_obj.title + '_副本'
         questionnaire_obj.save()
 
         question_list = list(Question.objects.filter(questionnaire_id=old_qn_pk))
@@ -275,11 +276,15 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
 
             for option_y in option_y_list:
                 y = option_y.title
+                answer_sheet_list = AnswerSheet.objects.filter(questionnaire=questionnaire)
+
                 num = AnswerSheet.objects.filter(questionnaire=questionnaire) \
                     .filter(Q(answer_detail_list__option__id=option_x.id) &
                             Q(answer_detail_list__option__id=option_y.id)).count()
                 print({y: num})
                 cross_table[x].append({y: num})
+
+
 
 
 class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
