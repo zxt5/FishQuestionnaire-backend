@@ -1,6 +1,22 @@
 request = {'question_x_list':[59],'question_y_list':[60]}
 cross_table = {}
 pk=8
+'''
+a = {"table_list" :
+        [
+            {   
+                "question_x":23,
+                "question_y":24,
+                "option_x_list":
+                                [
+                                    {"id":241},
+                                    {"id":242}
+                                ]
+            }
+        ]
+    }
+
+'''
 question_x_list = request['question_x_list']
 question_y_list = request['question_y_list']
 questionnaire = Questionnaire.objects.get(id=pk)

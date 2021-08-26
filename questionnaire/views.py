@@ -16,7 +16,7 @@ from rest_framework.response import Response
 
 from questionnaire.models import Questionnaire, Question, Option, AnswerSheet
 from questionnaire.serializers import QuestionnaireDetailSerializer, QuestionnaireListSerializer, OptionSerializer, \
-    QuestionSerializer, AnswerSheetSerializer, QuestionnaireReportSerializer
+    QuestionSerializer, AnswerSheetSerializer, QuestionnaireReportSerializer, QuestionnaireSignUPSerializer
 
 
 class CreateListModelMixin(object):
@@ -291,6 +291,17 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         response.status_code = 200
         return response
 
+    @action(detail=True, methods=['get'],
+            url_path='sign-up', url_name='sign-up',
+            serializer_class=QuestionnaireSignUPSerializer)
+    def sign_up_detail(self, request, pk=None):
+        questionnaire = Questionnaire.objects.get(pk=pk)
+        serializer = self.get_serializer(questionnaire,
+                                         context={'request': request})
+
+        return Response(serializer.data,
+                        status.HTTP_200_OK)
+
 
 class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = Question.objects.all()
@@ -443,5 +454,3 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-

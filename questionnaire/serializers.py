@@ -97,7 +97,6 @@ class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
         question_list = instance.question_list.all().order_by('ordering')
         return QuestionNestSerializer(question_list, many=True).data
 
-
     def update(self, instance, validated_data):
         question_list_data = validated_data.get('question_list')
         question_class = QuestionSerializer()
@@ -177,6 +176,7 @@ class AnswerDetailReportSerializer(serializers.ModelSerializer):
     ip = serializers.SerializerMethodField(read_only=True)
     modified_time = serializers.SerializerMethodField(read_only=True)
     ordering = serializers.SerializerMethodField(read_only=True)
+
     # ordering为0的原因是，方便前端修改增加序号等。
     def get_ordering(self, instance):
         return 0
@@ -223,7 +223,7 @@ class OptionReportSerializer(serializers.ModelSerializer):
         option_num = instance.answer_detail_list.count()
         total = instance.question.answer_detail_list.count()
         if total != 0:
-            return format(option_num / total * 100, '.2f')+"%"
+            return format(option_num / total * 100, '.2f') + "%"
         else:
             return '0'
 
@@ -266,3 +266,40 @@ class QuestionnaireReportSerializer(QuestionnaireBaseSerializer):
         fields = '__all__'
 
 
+class OptionSignUPSerializer(serializers.ModelSerializer):
+    number = serializers.SerializerMethodField()
+
+    def get_number(self, instance):
+        if instance.is_limit_answer:
+            return instance.limit_answer_number - instance.get_answer_num()
+        return 0
+
+
+    class Meta:
+        model = Question
+        fields = '__all__'
+
+
+class QuestionSignUPSerializer(serializers.ModelSerializer):
+    option_list = serializers.SerializerMethodField()
+
+    def get_option_list(self, instance):
+        option_list = instance.option_list.all().order_by('ordering')
+        return OptionSignUPSerializer(option_list, many=True).data
+
+    class Meta:
+        model = Question
+        fields = '__all__'
+
+
+class QuestionnaireSignUPSerializer(QuestionnaireBaseSerializer):
+    question_list = serializers.SerializerMethodField(required=False)
+
+    def get_number(self, instance):
+        if instance.is_limit_answer:
+            return instance.limit_answer_number - instance.get_answer_num()
+        return 0
+
+    def get_question_list(self, instance):
+        question_list = instance.question_list.all().order_by('ordering')
+        return QuestionSignUPSerializer(question_list, many=True).data
