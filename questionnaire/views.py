@@ -3,6 +3,7 @@ from datetime import datetime
 import django_filters
 import pytz
 import xlwt
+from django.db import transaction
 from django.db.models import F, Count
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
@@ -411,9 +412,9 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = AnswerSheet.objects.all()
     serializer_class = AnswerSheetSerializer
 
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
-        # 作为原子操作判断数据库限额，如果
-        questionnaire = Questionnaire.objects.get(pk=request.data['questionnaire'])
+        questionnaire = Questionnaire.objects.select_for_update().get(pk=request.data['questionnaire'])
         if questionnaire.is_limit_answer:
             total_questionnaire_answer_num = questionnaire.get_answer_num()
             delta = questionnaire.limit_answer_number - total_questionnaire_answer_num
@@ -423,7 +424,7 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
 
         answer_list = request.data['answer_list']
         for answer in answer_list:
-            option = Question.objects.get(pk=answer.option)
+            option = Option.objects.select_for_update().get(pk=answer['option'])
             if option.is_limit_answer:
                 delta = option.limit_answer_number - option.get_answer_num()
                 if delta <= 0:
