@@ -42,8 +42,11 @@ class Questionnaire(models.Model):
         verbose_name='问卷类型',
     )
 
-    # 截止时间功能等
+    # 是否显示题号
+    is_show_question_num = models.BooleanField(default=True,
+                                               verbose_name="是否显示题号")
 
+    # 截止时间功能等
     is_locked = models.BooleanField(default=False, verbose_name="访问是否需要密码")
     password = models.CharField(max_length=255, blank=True, default='', verbose_name="访问密码")
 
@@ -174,7 +177,7 @@ class AnswerSheet(models.Model):
     started_time = models.DateTimeField(default=timezone.now, verbose_name='回答开始时间')
     modified_time = models.DateTimeField(default=timezone.now, verbose_name='回答结束时间')
     ip = models.CharField(max_length=255, blank=True, verbose_name='用户IP地址')
-
+    cname = models.CharField(max_length=255, blank=True, verbose_name='用户地址')
 
 class AnswerDetail(models.Model):
     sheet = models.ForeignKey(

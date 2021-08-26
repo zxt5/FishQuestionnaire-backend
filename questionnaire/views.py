@@ -202,11 +202,11 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         font_style = xlwt.XFStyle()
 
         # 确定额外的信息
-        columns = ['ip', 'modified_time']
-        trans_dic = {'ip': 'ip', 'modified_time': '提交答题时间'}
+        columns = ['respondent__username', 'modified_time']
+        trans_dic = {'respondent__username': '用户名', 'modified_time': '提交答题时间'}
         # 获取答卷表单，确定顺序不变
         answer_list = AnswerSheet.objects.filter(questionnaire_id=pk).order_by('modified_time')
-        ans_list = answer_list.values_list('ip', 'modified_time')
+        ans_list = answer_list.values_list('respondent__username', 'modified_time')
 
         # 首先填写额外的信息
 
