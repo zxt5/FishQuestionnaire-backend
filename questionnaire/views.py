@@ -412,8 +412,9 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = AnswerSheet.objects.all()
     serializer_class = AnswerSheetSerializer
 
-    @transaction.atomic
+    @transaction.atomic(durable=True)
     def create(self, request, *args, **kwargs):
+        # 锁住限额的问题，直到事务结束，下一个事务进来无法获取会卡在这里，达成了阻塞并发的目的
         questionnaire = Questionnaire.objects.select_for_update().get(pk=request.data['questionnaire'])
         if questionnaire.is_limit_answer:
             total_questionnaire_answer_num = questionnaire.get_answer_num()
@@ -424,6 +425,7 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
 
         answer_list = request.data['answer_list']
         for answer in answer_list:
+            # 锁住限额的问题，直到事务结束，下一个事务进来无法获取会卡在这里，达成了阻塞并发的目的
             option = Option.objects.select_for_update().get(pk=answer['option'])
             if option.is_limit_answer:
                 delta = option.limit_answer_number - option.get_answer_num()
@@ -434,12 +436,12 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-    def perform_create(self, serializer):
         if self.request.user.is_authenticated:
             serializer.save(respondent=self.request.user)
         else:
             serializer.save()
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
