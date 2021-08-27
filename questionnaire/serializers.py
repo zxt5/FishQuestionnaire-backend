@@ -25,10 +25,28 @@ class OptionNestSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=False, required=False)
 
     answer_num = serializers.SerializerMethodField(read_only=True)
+    percent = serializers.SerializerMethodField(read_only=True)
+    percent_string = serializers.SerializerMethodField(read_only=True)
 
     def get_answer_num(self, option):
         return option.get_answer_num()
 
+    def get_percent(self, instance):
+        option_num = instance.answer_detail_list.count()
+        total = instance.question.get_answer_num()
+        if total != 0:
+            return int(option_num / total * 100 * 100) / 100
+        else:
+            return 0
+
+
+    def get_percent_string(self, instance):
+        option_num = instance.answer_detail_list.count()
+        total = instance.question.get_answer_num()
+        if total != 0:
+            return format(option_num / total * 100, '.2f') + "%"
+        else:
+            return '0'
     class Meta:
         model = Option
         exclude = ['question']

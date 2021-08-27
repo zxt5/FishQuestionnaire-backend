@@ -1,3 +1,4 @@
+import random
 from datetime import datetime
 
 import django_filters
@@ -68,6 +69,24 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        # 如果没有，那就默认为False，就不管了
+        is_unordered_show = request.data.get('is_unordered_show',False)
+        if is_unordered_show:
+            user = request.user
+            if not user.is_authenticated:
+                return Response({"message" : "需要用户登陆后才可查看具体内容"},
+                                status.HTTP_401_UNAUTHORIZED)
+            else:
+                question_list = list(instance.question_list.all())
+                random.seed(request.user.id)
+                random.shuffle(question_list)
+                serializer.data['question_list'] = question_list
+
+        return Response(serializer.data)
 
     # 开启/关闭 假设给的数据没问题
     @action(detail=True, methods=['put'],
@@ -316,6 +335,11 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         return Response(serializer.data,
                         status.HTTP_200_OK)
 
+    # @action(detail=True, methods=['get'],
+    #         url_path='sign-up', url_name='sign-up',
+    #         serializer_class=QuestionnaireSignUPSerializer)
+    #
+
 
 class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     queryset = Question.objects.all()
@@ -487,6 +511,6 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
                 has_answer = True
                 break
         if has_answer:
-            return Response({"has_answer" : True}, status=status.HTTP_200_OK)
+            return Response({"has_answer": True}, status=status.HTTP_200_OK)
         else:
-            return Response({"has_answer" : False}, status=status.HTTP_200_OK)
+            return Response({"has_answer": False}, status=status.HTTP_200_OK)
