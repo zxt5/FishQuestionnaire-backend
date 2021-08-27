@@ -46,7 +46,8 @@ class OptionNestSerializer(serializers.ModelSerializer):
         if total != 0:
             return format(option_num / total * 100, '.2f') + "%"
         else:
-            return '0'
+            return '0.00%'
+
     class Meta:
         model = Option
         exclude = ['question']
@@ -289,7 +290,7 @@ class OptionReportSerializer(serializers.ModelSerializer):
         if total != 0:
             return format(option_num / total * 100, '.2f') + "%"
         else:
-            return '0'
+            return '0.00%'
 
     def get_answer_list(self, instance):
         answer_list = instance.answer_detail_list.all()
