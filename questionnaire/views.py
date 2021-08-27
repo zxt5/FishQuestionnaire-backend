@@ -282,15 +282,26 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
                 option_x_list = table['option_x_list'] = OptionBaseSerializer(question_x.option_list.all(),
                                                                               many=True).data
 
+                answer_sheet_question_y = answer_sheet_list.filter(answer_detail_list__question_id=question_y.id)
+
                 for option_x in option_x_list:
                     option_x['option_y_list'] = OptionBaseSerializer(option_y_list_obj,
                                                                      many=True).data
+                    option_x_id = option_x['id']
+                    answer_sheet_x = answer_sheet_list.filter(answer_detail_list__option__id=option_x_id)
+                    option_x['num'] = (answer_sheet_x & answer_sheet_question_y).count()
                     for option_y in option_x['option_y_list']:
                         option_y_id = option_y['id']
-                        option_x_id = option_x['id']
-                        answer_sheet_x = answer_sheet_list.filter(answer_detail_list__option__id=option_x_id)
                         answer_sheet_y = answer_sheet_list.filter(answer_detail_list__option__id=option_y_id)
                         option_y['num'] = (answer_sheet_x & answer_sheet_y).count()
+                        if option_x['num'] != 0:
+                            option_y['percent'] = int(option_y['num']/option_x['num'] * 100 * 100) / 100
+                        else:
+                            option_y['percent'] = 0
+
+                        option_y['percent_string'] = format(option_y['percent'], '.2f') + "%"
+
+
         response = JsonResponse(cross_table)
         response.status_code = 200
         return response
