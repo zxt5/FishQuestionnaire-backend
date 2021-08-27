@@ -470,3 +470,23 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
 
         headers = self.get_success_headers(serializer.data)
         return Response(result_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    @action(detail=False, methods=['put'],
+            url_path='check_answer', url_name='check_answer',
+            serializer_class=QuestionnaireSignUPSerializer)
+    def check_answer(self, request):
+        user = request.user
+        has_answer = False
+        pk = request.data['id']
+        questionnaire = Questionnaire.objects.get(id=pk)
+        if not user.is_authenticated:
+            return Response({"message": "用户首先应该登录"}, status=status.HTTP_401_UNAUTHORIZED)
+        respondent_id_list = list(questionnaire.answer_sheet_list.values("respondent").distinct())
+        for respondent in respondent_id_list:
+            if user.id == respondent["respondent"]:
+                has_answer = True
+                break
+        if has_answer:
+            return Response({"has_answer" : True}, status=status.HTTP_200_OK)
+        else:
+            return Response({"has_answer" : False}, status=status.HTTP_200_OK)

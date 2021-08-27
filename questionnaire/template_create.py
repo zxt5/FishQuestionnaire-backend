@@ -38,6 +38,8 @@ class Template:
 
     def vote(self, instance):
         question = self.create_question("投票单选择题", "single-choice", instance)
+        question.is_show_result = True
+        question.save()
         option_title_list = ["第一个选项", "第二个选项"]
         self.create_option(question, option_title_list)
 
