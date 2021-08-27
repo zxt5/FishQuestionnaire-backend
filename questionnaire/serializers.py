@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from questionnaire.models import Questionnaire, Question, Option, AnswerSheet, AnswerDetail
-from template_create import Template
+from questionnaire.template_create import Template
 from user_info.serializers import UserDescSerializer
 
 
@@ -23,6 +23,11 @@ class OptionSerializer(serializers.ModelSerializer):
 
 class OptionNestSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=False, required=False)
+
+    answer_num = serializers.SerializerMethodField(read_only=True)
+
+    def get_answer_num(self, option):
+        return option.get_answer_num()
 
     class Meta:
         model = Option
@@ -46,6 +51,10 @@ class QuestionSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     option_list = OptionNestSerializer(many=True, required=False)
     ordering = serializers.IntegerField(required=False)
+    answer_num = serializers.SerializerMethodField(read_only=True)
+
+    def get_answer_num(self, question):
+        return question.get_answer_num()
 
     class Meta:
         model = Question
@@ -244,7 +253,7 @@ class OptionReportSerializer(serializers.ModelSerializer):
 
     def get_percent(self, instance):
         option_num = instance.answer_detail_list.count()
-        total = instance.question.answer_detail_list.count()
+        total = instance.question.get_answer_num()
         if total != 0:
             return int(option_num / total * 100 * 100) / 100
         else:
@@ -258,7 +267,7 @@ class OptionReportSerializer(serializers.ModelSerializer):
 
     def get_percent_string(self, instance):
         option_num = instance.answer_detail_list.count()
-        total = instance.question.answer_detail_list.count()
+        total = instance.question.get_answer_num()
         if total != 0:
             return format(option_num / total * 100, '.2f') + "%"
         else:
@@ -278,9 +287,7 @@ class QuestionReportSerializer(QuestionBaseSerializer):
     number = serializers.SerializerMethodField()
 
     def get_number(self, instance):
-        return AnswerDetail.objects.filter(question=instance).count()
-        # return AnswerSheet.objects.filter(question=instance). \
-        #     values('ordering').distinct().count()
+        return instance.get_answer_num()
 
     def get_option_list(self, instance):
         option_list = instance.option_list.all().order_by('ordering')

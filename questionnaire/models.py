@@ -130,6 +130,12 @@ class Question(models.Model):
 
     ordering = models.PositiveIntegerField(verbose_name='题目序号')
     is_must_answer = models.BooleanField(default=False, verbose_name='是否必答')
+
+    # 投票题的字段
+    is_show_result = models.BooleanField(default=False, verbose_name="是否在回答后显示各个选项的结果")
+
+
+    # 报名题限额的字段
     is_limit_answer = models.BooleanField(default=False, verbose_name='是否限制该题答题人数')
     limit_answer_number = models.IntegerField(default=0, verbose_name='该题限制的答题人数')
 
@@ -137,6 +143,9 @@ class Question(models.Model):
     is_scoring = models.BooleanField(default=False, verbose_name='是否评分')
     question_score = models.IntegerField(default=0, blank=True, null=True, verbose_name='题目分数')
     answer = models.TextField(blank=True, verbose_name='参考答案')
+
+    def get_answer_num(self):
+        return self.answer_detail_list.values("sheet").distinct().count()
 
     def __str__(self):
         return '_'.join([str(self.pk), self.title])

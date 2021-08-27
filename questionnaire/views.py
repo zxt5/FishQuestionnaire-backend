@@ -295,12 +295,11 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
                         answer_sheet_y = answer_sheet_list.filter(answer_detail_list__option__id=option_y_id)
                         option_y['num'] = (answer_sheet_x & answer_sheet_y).count()
                         if option_x['num'] != 0:
-                            option_y['percent'] = int(option_y['num']/option_x['num'] * 100 * 100) / 100
+                            option_y['percent'] = int(option_y['num'] / option_x['num'] * 100 * 100) / 100
                         else:
                             option_y['percent'] = 0
 
                         option_y['percent_string'] = format(option_y['percent'], '.2f') + "%"
-
 
         response = JsonResponse(cross_table)
         response.status_code = 200
@@ -467,5 +466,7 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
         else:
             serializer.save()
 
+        result_serializer = QuestionnaireDetailSerializer(questionnaire, context={'request': request})
+
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(result_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
