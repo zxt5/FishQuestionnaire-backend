@@ -18,7 +18,7 @@ from rest_framework.response import Response
 from questionnaire.models import Questionnaire, Question, Option, AnswerSheet
 from questionnaire.serializers import QuestionnaireDetailSerializer, QuestionnaireListSerializer, OptionSerializer, \
     QuestionSerializer, AnswerSheetSerializer, QuestionnaireReportSerializer, QuestionnaireSignUPSerializer, \
-    QuestionBaseSerializer, OptionBaseSerializer
+    QuestionBaseSerializer, OptionBaseSerializer, QuestionNestSerializer
 
 
 class CreateListModelMixin(object):
@@ -74,18 +74,20 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         # 如果没有，那就默认为False，就不管了
-        is_unordered_show = request.data.get('is_unordered_show',False)
-        if is_unordered_show:
+        is_unordered_show = request.data.get('is_fill_or_preview', False)
+        if is_unordered_show and instance.oreder_type == 'disorder':
             user = request.user
             if not user.is_authenticated:
-                return Response({"message" : "需要用户登陆后才可查看具体内容"},
+                return Response({"message": "需要用户登陆后才可查看具体内容"},
                                 status.HTTP_401_UNAUTHORIZED)
             else:
                 question_list = list(instance.question_list.all())
                 random.seed(request.user.id)
                 random.shuffle(question_list)
-                serializer.data['question_list'] = question_list
-
+                qs = QuestionNestSerializer(question_list, many=True).data
+                serializer_data = serializer.data
+                serializer_data['question_list'] = qs
+            return Response(serializer_data)
         return Response(serializer.data)
 
     # 开启/关闭 假设给的数据没问题

@@ -33,7 +33,7 @@ class OptionNestSerializer(serializers.ModelSerializer):
 
     def get_percent(self, instance):
         option_num = instance.answer_detail_list.count()
-        total = instance.question.get_answer_num()
+        total = instance.question.answer_detail_list.count()
         if total != 0:
             return int(option_num / total * 100 * 100) / 100
         else:
@@ -42,7 +42,7 @@ class OptionNestSerializer(serializers.ModelSerializer):
 
     def get_percent_string(self, instance):
         option_num = instance.answer_detail_list.count()
-        total = instance.question.get_answer_num()
+        total = instance.question.answer_detail_list.count()
         if total != 0:
             return format(option_num / total * 100, '.2f') + "%"
         else:
