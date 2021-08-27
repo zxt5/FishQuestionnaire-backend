@@ -153,7 +153,7 @@ class Option(models.Model):
     content = models.TextField(verbose_name='选项备注', blank=True)
     ordering = models.PositiveIntegerField(verbose_name='选项序号')
 
-    # 投票功能
+    # 报名功能
     is_limit_answer = models.BooleanField(default=False, verbose_name='是否限制该选项选择人数')
     limit_answer_number = models.IntegerField(default=0, verbose_name='该选项限制的选择人数')
 
