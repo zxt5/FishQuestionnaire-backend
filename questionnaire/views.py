@@ -16,7 +16,8 @@ from rest_framework.response import Response
 
 from questionnaire.models import Questionnaire, Question, Option, AnswerSheet
 from questionnaire.serializers import QuestionnaireDetailSerializer, QuestionnaireListSerializer, OptionSerializer, \
-    QuestionSerializer, AnswerSheetSerializer, QuestionnaireReportSerializer, QuestionnaireSignUPSerializer
+    QuestionSerializer, AnswerSheetSerializer, QuestionnaireReportSerializer, QuestionnaireSignUPSerializer, \
+    QuestionBaseSerializer, OptionBaseSerializer
 
 
 class CreateListModelMixin(object):
@@ -264,29 +265,32 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         question_x_list = request.data['question_x_list']
         question_y_list = request.data['question_y_list']
         questionnaire = Questionnaire.objects.get(id=pk)
-        cross_table = {}
+        answer_sheet_list = AnswerSheet.objects.filter(questionnaire=questionnaire)
+        cross_table = {'table_list': []}
+        for pk_x in question_x_list:
+            for pk_y in question_y_list:
+                question_x = Question.objects.get(pk=pk_x)
+                question_y = Question.objects.get(pk=pk_y)
+                question_x_data = QuestionBaseSerializer(question_x).data
+                question_y_data = QuestionBaseSerializer(question_y).data
+                table = {}
+                cross_table['table_list'].append(table)
+                table['question_x'] = question_x_data
+                table['question_y'] = question_y_data
+                table['option_x_list'] = []
+                option_y_list_obj = question_y.option_list.all()
+                option_x_list = table['option_x_list'] = OptionBaseSerializer(question_x.option_list.all(),
+                                                                              many=True).data
 
-        question_x = Question.objects.get(pk=question_x_list[0])
-        question_y = Question.objects.get(pk=question_y_list[0])
-
-        option_x_list = question_x.option_list.all()
-        option_y_list = question_y.option_list.all()
-
-        for option_x in option_x_list:
-            x = option_x.title
-            cross_table[x] = []
-
-            for option_y in option_y_list:
-                y = option_y.title
-                answer_sheet_list = AnswerSheet.objects.filter(questionnaire=questionnaire)
-                answer_sheet_x = answer_sheet_list.filter(answer_detail_list__option__id=option_x.id)
-                answer_sheet_y = answer_sheet_list.filter(answer_detail_list__option__id=option_y.id)
-                num = (answer_sheet_x | answer_sheet_y).count()
-                # num = AnswerSheet.objects.filter(questionnaire=questionnaire) \
-                #     .filter(Q(answer_detail_list__option__id=option_x.id) &
-                #             Q(answer_detail_list__option__id=option_y.id)).count()
-                print({y: num})
-                cross_table[x].append({y: num})
+                for option_x in option_x_list:
+                    option_x['option_y_list'] = OptionBaseSerializer(option_y_list_obj,
+                                                                     many=True).data
+                    for option_y in option_x['option_y_list']:
+                        option_y_id = option_y['id']
+                        option_x_id = option_x['id']
+                        answer_sheet_x = answer_sheet_list.filter(answer_detail_list__option__id=option_x_id)
+                        answer_sheet_y = answer_sheet_list.filter(answer_detail_list__option__id=option_y_id)
+                        option_y['num'] = (answer_sheet_x & answer_sheet_y).count()
         response = JsonResponse(cross_table)
         response.status_code = 200
         return response
@@ -297,7 +301,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
     def sign_up_detail(self, request, pk=None):
         questionnaire = Questionnaire.objects.get(pk=pk)
         serializer = QuestionnaireSignUPSerializer(questionnaire,
-                                         context={'request': request})
+                                                   context={'request': request})
 
         return Response(serializer.data,
                         status.HTTP_200_OK)

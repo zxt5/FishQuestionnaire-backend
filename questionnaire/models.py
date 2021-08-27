@@ -5,7 +5,7 @@ from django.utils import timezone
 
 
 class Questionnaire(models.Model):
-    title = models.CharField(max_length=255,verbose_name='问卷标题')
+    title = models.CharField(max_length=255, verbose_name='问卷标题')
     content = models.TextField(verbose_name='问卷备注')
     author = models.ForeignKey(
         to=User,
@@ -46,13 +46,20 @@ class Questionnaire(models.Model):
     is_limit_answer = models.BooleanField(default=False, verbose_name='是否限制该问卷作答人数')
     limit_answer_number = models.IntegerField(default=0, verbose_name='该问卷限制的作答人数')
 
-
-
     # 是否显示题号
     is_show_question_num = models.BooleanField(default=True,
                                                verbose_name="是否显示题号")
 
-    # 截止时间功能等
+    # 截止时间和开始时间
+    is_end_time = models.BooleanField(default=False,
+                                      verbose_name='是否设置截止时间')
+    end_time = models.DateTimeField(blank=True, null=True, verbose_name='截止时间')
+
+    is_start_time = models.BooleanField(default=False,
+                                        verbose_name='是否设置开始时间')
+    start_time = models.DateTimeField(blank=True, null=True, verbose_name='开始时间')
+
+    # 表单防止泄露等
     is_locked = models.BooleanField(default=False, verbose_name="访问是否需要密码")
     password = models.CharField(max_length=255, blank=True, default='', verbose_name="访问密码")
 
@@ -141,7 +148,6 @@ class Option(models.Model):
     content = models.TextField(verbose_name='选项备注', blank=True)
     ordering = models.PositiveIntegerField(verbose_name='选项序号')
 
-
     # 投票功能
     is_limit_answer = models.BooleanField(default=False, verbose_name='是否限制该选项选择人数')
     limit_answer_number = models.IntegerField(default=0, verbose_name='该选项限制的选择人数')
@@ -158,7 +164,7 @@ class Option(models.Model):
 
     # 字段限制
     is_attr_limit = models.BooleanField(default=False, verbose_name="是否进行字段限制")
-    attr_limit_type = models.CharField(max_length=255,blank=True, verbose_name="字段限制类型")
+    attr_limit_type = models.CharField(max_length=255, blank=True, verbose_name="字段限制类型")
     validator_regex = models.CharField(max_length=255,
                                        blank=True,
                                        verbose_name='以正则表达形式式存储的字段检查正则式')
@@ -190,6 +196,7 @@ class AnswerSheet(models.Model):
     modified_time = models.DateTimeField(default=timezone.now, verbose_name='回答结束时间')
     ip = models.CharField(max_length=255, blank=True, verbose_name='用户IP地址')
     cname = models.CharField(max_length=255, blank=True, verbose_name='用户地址')
+
 
 class AnswerDetail(models.Model):
     sheet = models.ForeignKey(

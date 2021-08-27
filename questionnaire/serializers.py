@@ -4,6 +4,14 @@ from questionnaire.models import Questionnaire, Question, Option, AnswerSheet, A
 from user_info.serializers import UserDescSerializer
 
 
+class OptionBaseSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Option
+        fields = ['id', 'title', 'ordering']
+
+
 class OptionSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
 
@@ -22,6 +30,14 @@ class OptionNestSerializer(serializers.ModelSerializer):
 
 class QuestionBaseSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Question
+        fields = [
+            'id',
+            'title',
+            'ordering'
+        ]
 
 
 class QuestionSerializer(serializers.ModelSerializer):
@@ -273,7 +289,6 @@ class OptionSignUPSerializer(serializers.ModelSerializer):
         if instance.is_limit_answer:
             return instance.limit_answer_number - instance.get_answer_num()
         return 0
-
 
     class Meta:
         model = Option
