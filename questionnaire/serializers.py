@@ -149,7 +149,7 @@ class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
 
     def create(self, validated_data):
         questionnaire = Questionnaire.objects.create(**validated_data)
-        questionnaire_type = questionnaire.type()
+        questionnaire_type = questionnaire.type
         template = Template()
         if questionnaire_type == 'vote':
             template.vote(questionnaire)
