@@ -34,6 +34,7 @@ class Questionnaire(models.Model):
         ('vote', '投票问卷'),
         ('exam', '考试问卷'),
         ('signup', '报名问卷'),
+        ('epidemic-check-in', '疫情打卡')
     ]
     type = models.CharField(
         max_length=50,
@@ -90,6 +91,9 @@ class Questionnaire(models.Model):
     def get_answer_num(self):
         return AnswerSheet.objects.filter(questionnaire__id=self.pk).count()
 
+    def get_question_num(self):
+        return Question.objects.filter(questionnaire__id=self.pk).count()
+
 
 class Question(models.Model):
     questionnaire = models.ForeignKey(
@@ -105,6 +109,7 @@ class Question(models.Model):
         ('multiple-choice', '多选题'),
         ('completion', '填空题'),
         ('scoring', '评分题'),
+        ('position', '定位题')
     ]
     type = models.CharField(
         max_length=50,

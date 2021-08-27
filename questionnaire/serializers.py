@@ -98,10 +98,13 @@ class QuestionnaireBaseSerializer(serializers.ModelSerializer):
     author = UserDescSerializer(read_only=True)
     url = serializers.HyperlinkedIdentityField(view_name='questionnaire-detail')
     answer_num = serializers.SerializerMethodField()
+    question_num = serializers.SerializerMethodField()
 
     def get_answer_num(self, questionnaire):
-        return questionnaire.answer_sheet_list.count()
+        return questionnaire.get_answer_num()
 
+    def get_question_num(self, questionnaire):
+        return questionnaire.get_question_num()
 
 class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
     question_list = serializers.SerializerMethodField(required=False)
