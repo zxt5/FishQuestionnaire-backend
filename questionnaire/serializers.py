@@ -36,6 +36,7 @@ class QuestionBaseSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'title',
+            'type',
             'ordering'
         ]
 
@@ -106,6 +107,7 @@ class QuestionnaireBaseSerializer(serializers.ModelSerializer):
     def get_question_num(self, questionnaire):
         return questionnaire.get_question_num()
 
+
 class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
     question_list = serializers.SerializerMethodField(required=False)
     '''
@@ -115,6 +117,22 @@ class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
     def get_question_list(self, instance):
         question_list = instance.question_list.all().order_by('ordering')
         return QuestionNestSerializer(question_list, many=True).data
+
+    def create(self, validated_data):
+        questionnaire = Questionnaire.objects.create(**validated_data)
+        questionnaire_type = questionnaire.type()
+
+        if questionnaire_type == 'vote':
+
+            print("投票问卷")
+        elif questionnaire_type == 'signup':
+            print('报名问卷')
+        elif questionnaire_type == 'exam':
+            print('考试问卷')
+        elif questionnaire_type == 'epidemic-check-in':
+            print('疫情打卡')
+
+        return questionnaire
 
     def update(self, instance, validated_data):
         question_list_data = validated_data.get('question_list')
