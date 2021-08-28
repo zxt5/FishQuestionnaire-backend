@@ -495,6 +495,8 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
         result_serializer = QuestionnaireDetailSerializer(questionnaire, context={'request': request})
 
 
+
+
         headers = self.get_success_headers(serializer.data)
         return Response(result_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -517,3 +519,28 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
             return Response({"has_answer": True}, status=status.HTTP_200_OK)
         else:
             return Response({"has_answer": False}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'],
+            url_path='exam_check', url_name='check_answer')
+    def exam_check(self, request):
+        answer_list = request.data['answer_list']
+        questionnaire = Questionnaire.objects.get(pk=request.data['questionnaire'])
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if self.request.user.is_authenticated:
+            serializer.save(respondent=self.request.user)
+        else:
+            serializer.save()
+        headers = self.get_success_headers(serializer.data)
+        # question_list = questionnaire.question_list.all()
+        # total_num = 0
+        # for question in question_list:
+        #     if question.is_scoring:
+        #         option_list = question.option_list.all()
+        #         for option in option_list:
+        #             if option.is_answer_choice:
+        #                 for answer in answer_list:
+
+
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

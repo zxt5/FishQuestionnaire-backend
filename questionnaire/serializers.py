@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from questionnaire.models import Questionnaire, Question, Option, AnswerSheet, AnswerDetail
-from questionnaire.template_create import Template
 from user_info.serializers import UserDescSerializer
 
 
@@ -150,15 +149,15 @@ class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
     def create(self, validated_data):
         questionnaire = Questionnaire.objects.create(**validated_data)
         questionnaire_type = questionnaire.type
-        template = Template()
-        if questionnaire_type == 'vote':
-            template.vote(questionnaire)
-        elif questionnaire_type == 'signup':
-            template.signup(questionnaire)
-        elif questionnaire_type == 'exam':
-            template.exam(questionnaire)
-        elif questionnaire_type == 'epidemic-check-in':
-            template.epidemic_check_in(questionnaire)
+        # template = Template()
+        # if questionnaire_type == 'vote':
+        #     template.vote(questionnaire)
+        # elif questionnaire_type == 'signup':
+        #     template.signup(questionnaire)
+        # elif questionnaire_type == 'exam':
+        #     template.exam(questionnaire)
+        # elif questionnaire_type == 'epidemic-check-in':
+        #     template.epidemic_check_in(questionnaire)
 
         return questionnaire
 

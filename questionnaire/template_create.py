@@ -19,19 +19,19 @@ class Template:
             type=type,
             ordering=ordering
         )
-        question_instance = question.save()
+        question.save()
         if type == 'completion':
             option = Option.objects.create(
                 title='填空题小空',
                 ordering='1',
-                question_id=question_instance.id,
+                question_id=question.id,
             )
             option.save()
         elif type == 'position':
             option = Option.objects.create(
                 title='定位题小空',
                 ordering='1',
-                question_id=question_instance.id,
+                question_id=question.id,
             )
             option.save()
         return question
