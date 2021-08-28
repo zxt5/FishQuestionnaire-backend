@@ -503,12 +503,13 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
             question_list = questionnaire_data['question_list']
             # 如果里面存在评测题，显示答案详情让用户回答
             for question in question_list:
-                if question.is_scoring:
+                if question['is_scoring']:
                     questionnaire_data['is_show_answer_detail'] = True
                     break
             # 判断每一个题目的得分，每个选项是否回答过
             if questionnaire_data['is_show_answer_detail']:
                 answer_list = request.data['answer_list']
+                print(answer_list)
                 for question in question_list:
                     # 如果是参与评分
                     if question['is_scoring']:  # 判断用户是否答了这道题
@@ -522,7 +523,7 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
                             option['is_user_answer'] = False
                             index = 0
                             for answer in answer_list:
-                                if answer['option'] == option['id']:
+                                if str(answer['option']) == str(option['id']):
                                     # 如果回答过
                                     option['is_user_answer'] = True
                                     content = answer.get('content', None)
@@ -536,6 +537,10 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
                                 if question['type'] == 'single-choice' or question['type'] == 'multiple-choice':
                                     if ((option['is_answer_choice'] and (not option['is_user_answer'])) or
                                             ((not option['is_answer_choice']) and option['is_user_answer'])):
+                                        print(option['id'])
+                                        print(option['is_answer_choice'])
+                                        print(option['is_user_answer'])
+                                        print("!14514")
                                         question['is_user_answer_right'] = False
                                         question['user_get_score'] = 0
                                 # 如果是填空题，很简单，只用看用户的回答是否和答案相同

@@ -213,17 +213,16 @@ class AnswerDetailNestSerializer(serializers.ModelSerializer):
 class AnswerSheetSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     respondent = UserDescSerializer(read_only=True)
-    answer_detail_list = AnswerDetailNestSerializer(many=True,
-                                                    required=False)
+    answer_list = AnswerDetailNestSerializer(many=True, required=False)
 
     class Meta:
         model = AnswerSheet
         fields = '__all__'
 
     def create(self, validated_data):
-        answer_list_data = validated_data.get('answer_list',None)
-        # if answer_list_data is not None:
-        #     validated_data.pop('answer_list')
+        answer_list_data = validated_data.get('answer_list', None)
+        if answer_list_data is not None:
+            validated_data.pop('answer_list')
 
         answer_sheet = AnswerSheet.objects.create(**validated_data)
 
