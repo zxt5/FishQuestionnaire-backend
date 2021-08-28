@@ -506,10 +506,19 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
                 if question['is_scoring']:
                     questionnaire_data['is_show_answer_detail'] = True
                     break
+            # 判断是否乱序
+            if questionnaire.oreder_type == 'disorder':
+                user = request.user
+                if not user.is_authenticated:
+                    return Response({"message": "需要用户登陆后才可查看具体内容"},
+                                    status.HTTP_401_UNAUTHORIZED)
+                else:
+                    random.seed(request.user.id)
+                    random.shuffle(question_list)
             # 判断每一个题目的得分，每个选项是否回答过
             if questionnaire_data['is_show_answer_detail']:
+
                 answer_list = request.data['answer_list']
-                print(answer_list)
                 for question in question_list:
                     # 如果是参与评分
                     if question['is_scoring']:  # 判断用户是否答了这道题
@@ -550,7 +559,7 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
                                         question['user_get_score'] = 0
 
                         question['option_list'] = option_list
-                questionnaire_data['question_list'] = question_list
+            questionnaire_data['question_list'] = question_list
 
         return Response(questionnaire_data, status=status.HTTP_201_CREATED, headers=headers)
 
