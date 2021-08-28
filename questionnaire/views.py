@@ -15,10 +15,10 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from questionnaire.models import Questionnaire, Question, Option, AnswerSheet
+from questionnaire.models import Questionnaire, Question, Option, AnswerSheet, QuestionOptionLogicRelation
 from questionnaire.serializers import QuestionnaireDetailSerializer, QuestionnaireListSerializer, OptionSerializer, \
     QuestionSerializer, AnswerSheetSerializer, QuestionnaireReportSerializer, QuestionnaireSignUPSerializer, \
-    QuestionBaseSerializer, OptionBaseSerializer, QuestionNestSerializer
+    QuestionBaseSerializer, OptionBaseSerializer, QuestionNestSerializer, QuestionOptionLogicRelationSerializer
 
 
 class CreateListModelMixin(object):
@@ -557,7 +557,7 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
                                             questionnaire_data['user_get_score_question_cnt'] -= 1
                                     # 如果是填空题，很简单，首先看用户是否回答过，如果有有，那再看只用看用户的回答是否和答案相同
                                     elif question['type'] == 'completion':
-                                        if (not option['is_user_answer']) or\
+                                        if (not option['is_user_answer']) or \
                                                 option['answer'] != option['user_answer_content']:
                                             question['is_user_answer_right'] = False
                                             question['user_get_score'] = 0
@@ -590,3 +590,16 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
             return Response({"has_answer": False}, status=status.HTTP_200_OK)
 
 
+class QuestionOptionLogicRelationViewSet(CreateListModelMixin, viewsets.ModelViewSet):
+    queryset = QuestionOptionLogicRelation.objects.all()
+    serializer_class = QuestionOptionLogicRelationSerializer
+
+    @action(detail=False, methods=['put'],
+            url_path='delete_all', url_name='delete_all')
+    def delete_all(self, request):
+        id = request.data['id']
+        QuestionOptionLogicRelation.objects.filter(
+            option__questionnaire_id=id
+        ).delete()
+
+        return Response(status.HTTP_200_OK)

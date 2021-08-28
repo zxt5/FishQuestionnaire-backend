@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.conf.urls.static import static
-
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
@@ -9,9 +8,9 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-
+from questionnaire.views import QuestionnaireViewSet, QuestionViewSet, OptionViewSet, AnswerSheetViewSet, \
+    QuestionOptionLogicRelationViewSet
 from user_info.views import UserViewSet
-from questionnaire.views import QuestionnaireViewSet, QuestionViewSet, OptionViewSet, AnswerSheetViewSet
 
 router = DefaultRouter()
 router.register(r'user', UserViewSet)
@@ -19,6 +18,8 @@ router.register(r'questionnaire', QuestionnaireViewSet)
 router.register(r'question', QuestionViewSet)
 router.register(r'option', OptionViewSet)
 router.register(r'answer', AnswerSheetViewSet)
+router.register(r'question_option_logic_relation', QuestionOptionLogicRelationViewSet)
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),

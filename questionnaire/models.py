@@ -232,3 +232,21 @@ class AnswerDetail(models.Model):
         related_name='answer_detail_list'
     )
     content = models.TextField(blank=True, null=True, verbose_name='选项填空内容')
+
+
+class QuestionOptionLogicRelation(models.Model):
+    question = models.ForeignKey(
+        to='Question',
+        on_delete=models.CASCADE,
+        verbose_name="关联问题",
+        related_name='logic_option_list'
+    )
+    option = models.ForeignKey(
+        to='Option',
+        on_delete=models.CASCADE,
+        verbose_name='关联选项',
+        related_name='logic_question_list'
+    )
+
+    def __str__(self):
+        return self.option.title + "逻辑关联" + self.question.title

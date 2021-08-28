@@ -1,16 +1,45 @@
 from rest_framework import serializers
 
-from questionnaire.models import Questionnaire, Question, Option, AnswerSheet, AnswerDetail
+from questionnaire.models import Questionnaire, Question, Option, AnswerSheet, AnswerDetail, QuestionOptionLogicRelation
 from questionnaire.template_create import Template
 from user_info.serializers import UserDescSerializer
 
 
+# 作为标签字段，像是部分信息
 class OptionBaseSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Option
         fields = ['id', 'title', 'ordering']
+
+
+# 作为标签字段的，显示部分信息的
+class QuestionBaseSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Question
+        fields = [
+            'id',
+            'title',
+            'type',
+            'ordering'
+        ]
+
+
+class QuestionnaireBaseSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    author = UserDescSerializer(read_only=True)
+    url = serializers.HyperlinkedIdentityField(view_name='questionnaire-detail')
+    answer_num = serializers.SerializerMethodField()
+    question_num = serializers.SerializerMethodField()
+
+    def get_answer_num(self, questionnaire):
+        return questionnaire.get_answer_num()
+
+    def get_question_num(self, questionnaire):
+        return questionnaire.get_question_num()
 
 
 class OptionSerializer(serializers.ModelSerializer):
@@ -27,6 +56,11 @@ class OptionNestSerializer(serializers.ModelSerializer):
     answer_num = serializers.SerializerMethodField(read_only=True)
     percent = serializers.SerializerMethodField(read_only=True)
     percent_string = serializers.SerializerMethodField(read_only=True)
+    related_logic_question = serializers.SerializerMethodField(read_only=True)
+
+    def get_related_logic_question(self, instance):
+        question_list = Question.objects.filter(logic_option_list__option_id=instance.id)
+        return QuestionBaseSerializer(question_list, many=True).data
 
     def get_answer_num(self, option):
         return option.get_answer_num()
@@ -38,7 +72,6 @@ class OptionNestSerializer(serializers.ModelSerializer):
             return int(option_num / total * 100 * 100) / 100
         else:
             return 0
-
 
     def get_percent_string(self, instance):
         option_num = instance.answer_detail_list.count()
@@ -53,19 +86,7 @@ class OptionNestSerializer(serializers.ModelSerializer):
         exclude = ['question']
 
 
-class QuestionBaseSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        model = Question
-        fields = [
-            'id',
-            'title',
-            'type',
-            'ordering'
-        ]
-
-
+# 普通的
 class QuestionSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     option_list = OptionNestSerializer(many=True, required=False)
@@ -119,24 +140,16 @@ class QuestionSerializer(serializers.ModelSerializer):
         return instance
 
 
+# 嵌套上传使用的Question
 class QuestionNestSerializer(QuestionSerializer):
     id = serializers.IntegerField(read_only=False, required=False)
+    relate_logic_option = serializers.SerializerMethodField(read_only=True)
 
+    def get_relate_logic_option(self, instance):
+        option_list = Option.objects.filter(logic_question_list__question_id=instance.id)
+        return OptionBaseSerializer(option_list, many=True).data
 
-class QuestionnaireBaseSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
-    author = UserDescSerializer(read_only=True)
-    url = serializers.HyperlinkedIdentityField(view_name='questionnaire-detail')
-    answer_num = serializers.SerializerMethodField()
-    question_num = serializers.SerializerMethodField()
-
-    def get_answer_num(self, questionnaire):
-        return questionnaire.get_answer_num()
-
-    def get_question_num(self, questionnaire):
-        return questionnaire.get_question_num()
-
-
+# QuestionNestSerializer，获取更多详细的信息。
 class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
     question_list = serializers.SerializerMethodField(required=False)
     '''
@@ -202,6 +215,7 @@ class QuestionnaireListSerializer(QuestionnaireBaseSerializer):
         read_only_fields = ['id', 'title']
 
 
+# 有关问卷提交的序列化器
 class AnswerDetailNestSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=False, required=False)
 
@@ -234,6 +248,7 @@ class AnswerSheetSerializer(serializers.ModelSerializer):
         return answer_sheet
 
 
+# 有关分析的序列化器
 class AnswerDetailReportSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     respondent = serializers.SerializerMethodField()
@@ -328,6 +343,7 @@ class QuestionnaireReportSerializer(QuestionnaireBaseSerializer):
         fields = '__all__'
 
 
+# 有关报名的序列化器，可以告诉用户现在剩余的报名人数
 class OptionSignUPSerializer(serializers.ModelSerializer):
     number = serializers.SerializerMethodField()
 
@@ -368,4 +384,11 @@ class QuestionnaireSignUPSerializer(QuestionnaireBaseSerializer):
 
     class Meta:
         model = Questionnaire
+        fields = '__all__'
+
+
+# 有关逻辑增删查改的序列化器
+class QuestionOptionLogicRelationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuestionOptionLogicRelation
         fields = '__all__'
