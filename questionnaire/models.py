@@ -142,7 +142,7 @@ class Question(models.Model):
     # 当且仅当is_scoring存在时，题目分数才有意义，且后者可为null，即不计分
     is_scoring = models.BooleanField(default=False, verbose_name='是否评分')
     question_score = models.IntegerField(default=0, blank=True, null=True, verbose_name='题目分数')
-    answer = models.TextField(blank=True, verbose_name='参考答案')
+    answer = models.TextField(blank=True, verbose_name='填空题答案')
 
     def get_answer_num(self):
         return self.answer_detail_list.values("sheet").distinct().count()

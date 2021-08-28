@@ -498,68 +498,74 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
         questionnaire_data = QuestionnaireDetailSerializer(questionnaire, context={'request': request}).data
         headers = self.get_success_headers(serializer.data)
 
-        # 如果为考试题
+        # 如果为考试题，看是否进行评测
         if questionnaire.type == 'exam':
             question_list = questionnaire_data['question_list']
+            questionnaire_data['is_show_answer_detail'] = False
             # 如果里面存在评测题，显示答案详情让用户回答
             for question in question_list:
                 if question['is_scoring']:
                     questionnaire_data['is_show_answer_detail'] = True
                     break
-            # 判断是否乱序
-            if questionnaire.oreder_type == 'disorder':
-                user = request.user
-                if not user.is_authenticated:
-                    return Response({"message": "需要用户登陆后才可查看具体内容"},
-                                    status.HTTP_401_UNAUTHORIZED)
-                else:
-                    random.seed(request.user.id)
-                    random.shuffle(question_list)
-            # 判断每一个题目的得分，每个选项是否回答过
+            # 显示问题详情。
             if questionnaire_data['is_show_answer_detail']:
+                # 判断是否乱序
+                if questionnaire_data['order_type'] == 'disorder':
+                    user = request.user
+                    if not user.is_authenticated:
+                        return Response({"message": "需要用户登陆后才可查看具体内容"},
+                                        status.HTTP_401_UNAUTHORIZED)
+                    else:
+                        random.seed(request.user.id)
+                        random.shuffle(question_list)
+                # 判断每一个题目的得分，每个选项是否回答过
+                if questionnaire_data['is_show_answer_detail']:
+                    answer_list = request.data['answer_list']
+                    for question in question_list:
+                        # 如果是参与评分
+                        if question['is_scoring']:  # 判断用户是否答了这道题
+                            option_list = question['option_list']
+                            # 默认回答正确,获得所有分数
+                            question['is_user_answer_right'] = True
+                            question['user_get_score'] = question['question_score']
+                            questionnaire_data['total_score'] += question['question_score']
+                            questionnaire_data['user_get_score'] += question['question_score']
+                            questionnaire_data['total_score_question_cnt'] += 1
+                            questionnaire_data['user_get_score_question_cnt'] += 1
+                            for option in option_list:
+                                # 默认没有回答过
+                                option['is_user_answer'] = False
+                                index = 0
+                                for answer in answer_list:
+                                    if str(answer['option']) == str(option['id']):
+                                        # 如果回答过
+                                        option['is_user_answer'] = True
+                                        content = answer.get('content', None)
+                                        option['user_answer_content'] = content
+                                        del answer_list[index]
+                                        # 跳出循环即可
+                                        break
+                                    index += 1
+                                if question['is_user_answer_right']:
+                                    # 如果是选择题，需要看每个选项。如果选项被选了，但不是正确答案或者选项没被选，但是是正确选项，回答错误。
+                                    if question['type'] == 'single-choice' or question['type'] == 'multiple-choice':
+                                        if ((option['is_answer_choice'] and (not option['is_user_answer'])) or
+                                                ((not option['is_answer_choice']) and option['is_user_answer'])):
+                                            question['is_user_answer_right'] = False
+                                            question['user_get_score'] = 0
+                                            questionnaire_data['user_get_score'] -= question['question_score']
+                                            questionnaire_data['user_get_score_question_cnt'] -= 1
+                                    # 如果是填空题，很简单，首先看用户是否回答过，如果有有，那再看只用看用户的回答是否和答案相同
+                                    elif question['type'] == 'completion':
+                                        if (not option['is_user_answer']) or\
+                                                option['answer'] != option['user_answer_content']:
+                                            question['is_user_answer_right'] = False
+                                            question['user_get_score'] = 0
+                                            questionnaire_data['user_get_score'] -= question['question_score']
+                                            questionnaire_data['user_get_score_question_cnt'] -= 1
 
-                answer_list = request.data['answer_list']
-                for question in question_list:
-                    # 如果是参与评分
-                    if question['is_scoring']:  # 判断用户是否答了这道题
-                        option_list = question['option_list']
-                        # 默认回答正确,获得所有分数
-                        question['is_user_answer_right'] = True
-                        question['user_get_score'] = question['question_score']
-
-                        for option in option_list:
-                            # 默认没有回答过
-                            option['is_user_answer'] = False
-                            index = 0
-                            for answer in answer_list:
-                                if str(answer['option']) == str(option['id']):
-                                    # 如果回答过
-                                    option['is_user_answer'] = True
-                                    content = answer.get('content', None)
-                                    option['user_answer_content'] = content
-                                    del answer_list[index]
-                                    # 跳出循环即可
-                                    break
-                                index += 1
-                            if question['is_user_answer_right']:
-                                # 如果是选择题，需要看每个选项。如果选项被选了，但不是正确答案或者选项没被选，但是是正确选项，回答错误。
-                                if question['type'] == 'single-choice' or question['type'] == 'multiple-choice':
-                                    if ((option['is_answer_choice'] and (not option['is_user_answer'])) or
-                                            ((not option['is_answer_choice']) and option['is_user_answer'])):
-                                        print(option['id'])
-                                        print(option['is_answer_choice'])
-                                        print(option['is_user_answer'])
-                                        print("!14514")
-                                        question['is_user_answer_right'] = False
-                                        question['user_get_score'] = 0
-                                # 如果是填空题，很简单，只用看用户的回答是否和答案相同
-                                elif question['type'] == 'completion':
-                                    if option['content'] != option['user_answer_content']:
-                                        question['is_user_answer_right'] = False
-                                        question['user_get_score'] = 0
-
-                        question['option_list'] = option_list
-            questionnaire_data['question_list'] = question_list
+                            question['option_list'] = option_list
+                questionnaire_data['question_list'] = question_list
 
         return Response(questionnaire_data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -583,25 +589,4 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
         else:
             return Response({"has_answer": False}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'],
-            url_path='exam_check', url_name='check_answer')
-    def exam_check(self, request):
-        answer_list = request.data['answer_list']
-        questionnaire = Questionnaire.objects.get(pk=request.data['questionnaire'])
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        if self.request.user.is_authenticated:
-            serializer.save(respondent=self.request.user)
-        else:
-            serializer.save()
-        headers = self.get_success_headers(serializer.data)
-        # question_list = questionnaire.question_list.all()
-        # total_num = 0
-        # for question in question_list:
-        #     if question.is_scoring:
-        #         option_list = question.option_list.all()
-        #         for option in option_list:
-        #             if option.is_answer_choice:
-        #                 for answer in answer_list:
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
