@@ -521,6 +521,10 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
                 # 判断每一个题目的得分，每个选项是否回答过
                 if questionnaire_data['is_show_answer_detail']:
                     answer_list = request.data['answer_list']
+                    questionnaire_data['total_score'] = 0
+                    questionnaire_data['user_get_score'] = 0
+                    questionnaire_data['total_score_question_cnt'] = 0
+                    questionnaire_data['user_get_score_question_cnt'] = 0
                     for question in question_list:
                         # 如果是参与评分
                         if question['is_scoring']:  # 判断用户是否答了这道题
@@ -594,12 +598,34 @@ class QuestionOptionLogicRelationViewSet(CreateListModelMixin, viewsets.ModelVie
     queryset = QuestionOptionLogicRelation.objects.all()
     serializer_class = QuestionOptionLogicRelationSerializer
 
+    @transaction.atomic
+    @action(detail=False, methods=['put'],
+            url_path='edit', url_name='edit')
+    def edit(self, request):
+        question_id = request.data['question_id']
+        relation_list = request.data['relation_list']
+        QuestionOptionLogicRelation.objects.filter(
+            option__question_id=question_id
+        ).delete()
+        if relation_list:
+            for relation in relation_list:
+                obj = QuestionOptionLogicRelation.objects.create(option_id=relation['option'],
+                                                                 question_id=relation['question'])
+                obj.save()
+        return Response(status.HTTP_200_OK)
+
     @action(detail=False, methods=['put'],
             url_path='delete_all', url_name='delete_all')
     def delete_all(self, request):
         id = request.data['id']
-        QuestionOptionLogicRelation.objects.filter(
-            option__questionnaire_id=id
-        ).delete()
+        type = request.data['type']
+        if type == 'questionnaire':
+            QuestionOptionLogicRelation.objects.filter(
+                option__questionnaire_id=id
+            ).delete()
+        if type == 'question':
+            QuestionOptionLogicRelation.objects.filter(
+                option__question_id=id
+            ).delete()
 
         return Response(status.HTTP_200_OK)
