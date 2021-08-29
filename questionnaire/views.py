@@ -484,6 +484,7 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
 
         # 判断选项是否限额
         answer_list = request.data['answer_list']
+        print(answer_list)
         for answer in answer_list:
             # 锁住限额的问题，直到事务结束，下一个事务进来无法获取会卡在这里，达成了阻塞并发的目的
             option = Option.objects.select_for_update().get(pk=answer['option'])
