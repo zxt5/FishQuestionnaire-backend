@@ -64,11 +64,14 @@ class OptionSerializer(serializers.ModelSerializer):
 
 class OptionNestSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=False, required=False)
-
+    question_ordering = serializers.SerializerMethodField(read_only=True)
     answer_num = serializers.SerializerMethodField(read_only=True)
     percent = serializers.SerializerMethodField(read_only=True)
     percent_string = serializers.SerializerMethodField(read_only=True)
     related_logic_question = serializers.SerializerMethodField(read_only=True)
+
+    def get_question_ordering(self, instance):
+        return instance.question.ordering
 
     def get_related_logic_question(self, instance):
         question_list = Question.objects.filter(logic_option_list__option_id=instance.id)
