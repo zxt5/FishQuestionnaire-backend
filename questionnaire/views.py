@@ -76,8 +76,11 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         instance = Questionnaire.objects.get(id=pk)
         serializer = self.get_serializer(instance)
         # 如果没有，那就默认为False，就不管了
+        user = request.user
+        if not user.is_authenticated:
+            return Response(serializer.data)
+
         if instance.order_type == 'disorder':
-            user = request.user
             if not user.is_authenticated:
                 return Response({"message": "需要用户登陆后才可查看具体内容"},
                                 status.HTTP_401_UNAUTHORIZED)
