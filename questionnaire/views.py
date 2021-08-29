@@ -75,7 +75,7 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance)
         # 如果没有，那就默认为False，就不管了
         is_unordered_show = request.data.get('is_fill_or_preview', False)
-        if is_unordered_show and instance.oreder_type == 'disorder':
+        if is_unordered_show and instance.order_type == 'disorder':
             user = request.user
             if not user.is_authenticated:
                 return Response({"message": "需要用户登陆后才可查看具体内容"},
