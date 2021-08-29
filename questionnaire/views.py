@@ -72,8 +72,8 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'],
             url_path='fill_or_preview', url_name='fill_or_preview')
-    def fill_or_preview(self, request):
-        instance = self.get_object()
+    def fill_or_preview(self, request, pk=None):
+        instance = Questionnaire.objects.get(id=pk)
         serializer = self.get_serializer(instance)
         # 如果没有，那就默认为False，就不管了
         if instance.order_type == 'disorder':
