@@ -409,6 +409,7 @@ class QuestionViewSet(CreateListModelMixin, viewsets.ModelViewSet):
     @action(detail=False, methods=['post'],
             url_path='copy', url_name='copy')
     def copy(self, request):
+
         old_q_pk = request.data.get('id')
 
         question = Question.objects.get(id=old_q_pk)
