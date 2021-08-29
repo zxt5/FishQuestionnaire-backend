@@ -149,6 +149,7 @@ class QuestionNestSerializer(QuestionSerializer):
         option_list = Option.objects.filter(logic_question_list__question_id=instance.id)
         return OptionBaseSerializer(option_list, many=True).data
 
+
 # QuestionNestSerializer，获取更多详细的信息。
 class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
     question_list = serializers.SerializerMethodField(required=False)
@@ -268,7 +269,9 @@ class AnswerDetailReportSerializer(serializers.ModelSerializer):
 
     def get_respondent(self, instance):
         respondent = instance.sheet.respondent
-        return UserDescSerializer(respondent).data
+        return UserDescSerializer(respondent, context={
+            "request": self.context['request']
+        }).data
 
     class Meta:
         model = AnswerDetail
