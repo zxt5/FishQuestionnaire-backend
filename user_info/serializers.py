@@ -1,21 +1,21 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.utils.translation import ugettext_lazy as _
-
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+
 from user_info.validator import SetCustomErrorMessagesMixin
 
 
 class UserDescSerializer(serializers.ModelSerializer):
-    url = serializers.HyperlinkedIdentityField(view_name='user-detail', lookup_field='username')
+    # url = serializers.HyperlinkedIdentityField(view_name='user-detail', lookup_field='username')
 
     class Meta:
         model = User
         fields = [
             'id',
             'username',
-            'url',
+            # 'url',
         ]
 
 
