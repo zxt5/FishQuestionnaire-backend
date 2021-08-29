@@ -269,9 +269,7 @@ class AnswerDetailReportSerializer(serializers.ModelSerializer):
 
     def get_respondent(self, instance):
         respondent = instance.sheet.respondent
-        return UserDescSerializer(respondent, context={
-            "request": self.context['request']
-        }).data
+        return UserDescSerializer(respondent).data
 
     class Meta:
         model = AnswerDetail
