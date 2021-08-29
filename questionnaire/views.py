@@ -544,7 +544,7 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
                                     if str(answer['option']) == str(option['id']):
                                         # 如果回答过
                                         option['is_user_answer'] = True
-                                        if question.type == 'single-choice':
+                                        if question['type'] == 'single-choice':
                                             question['answer_ordering'] = option['ordering']
                                         content = answer.get('content', None)
                                         option['user_answer_content'] = content
