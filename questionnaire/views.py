@@ -544,6 +544,8 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
                                     if str(answer['option']) == str(option['id']):
                                         # 如果回答过
                                         option['is_user_answer'] = True
+                                        if question.type == 'single-choice':
+                                            question['answer_ordering'] = option['ordering']
                                         content = answer.get('content', None)
                                         option['user_answer_content'] = content
                                         del answer_list[index]
@@ -615,7 +617,20 @@ class QuestionOptionLogicRelationViewSet(CreateListModelMixin, viewsets.ModelVie
                 obj = QuestionOptionLogicRelation.objects.create(option_id=relation['option'],
                                                                  question_id=relation['question'])
                 obj.save()
+        questionnaire = Questionnaire.objects.get(question_list__id=question_id)
+        questionnaire_data = QuestionnaireDetailSerializer(questionnaire, context={'request': request}).data
+        return Response(questionnaire_data, status.HTTP_200_OK)
+
+    @action(detail=False, methods=['put'],
+            url_path='delete_list', url_name='delete_list')
+    def delete_list(self, request):
+        delete_list = request.data['delete_list']
+        for obj_data in delete_list:
+            obj = QuestionOptionLogicRelation.objects.get(question=obj_data['question'], option=obj_data['option'])
+            obj.delete()
         return Response(status.HTTP_200_OK)
+
+
 
     @action(detail=False, methods=['put'],
             url_path='delete_all', url_name='delete_all')

@@ -165,6 +165,7 @@ class QuestionNestSerializer(QuestionSerializer):
 # QuestionNestSerializer，获取更多详细的信息。
 class QuestionnaireDetailSerializer(QuestionnaireBaseSerializer):
     question_list = serializers.SerializerMethodField(required=False)
+
     '''
         解析问卷。一次性传入，然后看题目的id是否存在。类似于题目选项的写法，难点是封装成一个递归函数
     '''
