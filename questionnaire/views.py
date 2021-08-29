@@ -70,12 +70,13 @@ class QuestionnaireViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    def retrieve(self, request, *args, **kwargs):
+    @action(detail=True, methods=['get'],
+            url_path='fill_or_preview', url_name='fill_or_preview')
+    def fill_or_preview(self, request):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         # 如果没有，那就默认为False，就不管了
-        is_unordered_show = request.data.get('is_fill_or_preview', False)
-        if is_unordered_show and instance.order_type == 'disorder':
+        if instance.order_type == 'disorder':
             user = request.user
             if not user.is_authenticated:
                 return Response({"message": "需要用户登陆后才可查看具体内容"},
@@ -629,8 +630,6 @@ class QuestionOptionLogicRelationViewSet(CreateListModelMixin, viewsets.ModelVie
             obj = QuestionOptionLogicRelation.objects.get(question=obj_data['question'], option=obj_data['option'])
             obj.delete()
         return Response(status.HTTP_200_OK)
-
-
 
     @action(detail=False, methods=['put'],
             url_path='delete_all', url_name='delete_all')
