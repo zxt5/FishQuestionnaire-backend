@@ -8,10 +8,22 @@ from user_info.serializers import UserDescSerializer
 # 作为标签字段，像是部分信息
 class OptionBaseSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
+    question_id = serializers.SerializerMethodField(read_only=True)
+    question_ordering = serializers.SerializerMethodField(read_only=True)
+
+    def get_question_id(self, instance):
+        return instance.question.id
+
+    def get_question_ordering(self, instance):
+        return instance.question.ordering
 
     class Meta:
         model = Option
-        fields = ['id', 'title', 'ordering']
+        fields = ['id',
+                  'title',
+                  'ordering',
+                  'question_id',
+                  'question_ordering']
 
 
 # 作为标签字段的，显示部分信息的

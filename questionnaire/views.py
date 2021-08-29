@@ -569,6 +569,9 @@ class AnswerSheetViewSet(CreateListModelMixin, viewsets.ModelViewSet):
                                             questionnaire_data['user_get_score_question_cnt'] -= 1
 
                             question['option_list'] = option_list
+                total = questionnaire_data['total_score_question_cnt']
+                get_score_cnt = questionnaire_data['user_get_score_question_cnt']
+                questionnaire_data['correct_rate'] = format(get_score_cnt / total * 100, '.2f') + "%"
                 questionnaire_data['question_list'] = question_list
 
         return Response(questionnaire_data, status=status.HTTP_201_CREATED, headers=headers)
