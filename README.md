@@ -1,7 +1,7 @@
 # MoyuBackend
 
-#### 介绍
-摸鱼问卷后端仓库
+#### Introduction
+The backend repository of Fish Questionnaire, a website provide comprehensive services in terms of questionnaires. 
 
-#### 软件架构
-软件架构说明
+Check the frontend repository (here)[https://github.com/zxt539/FishQuestionnaire-frontend] .
+
